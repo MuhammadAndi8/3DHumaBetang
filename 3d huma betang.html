@@ -1,0 +1,3095 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huma Betang: Sang Pamomong — Simulasi 3D Konseling Lintas Budaya</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Tone.js for Procedural Sape Pentatonic Music & UI SFX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --parchment: #f3ead8;
+            --ulin-dark: #120c08;
+            --terracotta: #9e2a22;
+            --ochre: #c88a2b;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            background-color: #0d0906;
+            color: var(--parchment);
+        }
+        .font-display { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+        .studio-rail {
+            background: linear-gradient(180deg, rgba(20, 12, 7, 0.96) 0%, rgba(12, 8, 5, 0.98) 100%);
+            border-right: 1px solid rgba(217, 155, 38, 0.35);
+            box-shadow: 12px 0 36px rgba(0, 0, 0, 0.75);
+        }
+        .studio-hud-plate {
+            background: linear-gradient(135deg, rgba(26, 16, 10, 0.95) 0%, rgba(15, 9, 6, 0.96) 100%);
+            border-radius: 10px;
+            border-left: 3px solid #f5b942;
+            border-top: 1px solid rgba(245, 185, 66, 0.35);
+            border-right: 1px solid rgba(243, 234, 216, 0.14);
+            border-bottom: 1px solid rgba(243, 234, 216, 0.14);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+        }
+        .menu-item-btn {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+            padding: 11px 16px;
+            border-radius: 8px;
+            text-align: left;
+            color: #d6c5ad;
+            border-left: 3px solid transparent;
+            background: transparent;
+            transition: all 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .menu-item-btn:hover, .menu-item-btn.primary-item {
+            color: #fffbeb;
+            background: linear-gradient(90deg, rgba(217, 155, 38, 0.22) 0%, rgba(143, 36, 30, 0.16) 70%, transparent 100%);
+            border-left-color: #f5b942;
+            padding-left: 22px;
+        }
+        .menu-item-btn.primary-item {
+            border-left-width: 4px;
+            color: #f5b942;
+        }
+
+        .vn-stage-gradient {
+            background: linear-gradient(0deg, rgba(10, 6, 4, 0.96) 0%, rgba(16, 10, 6, 0.78) 65%, rgba(16, 10, 6, 0) 100%);
+        }
+        .vn-dialogue-plate {
+            background: linear-gradient(180deg, rgba(31, 19, 12, 0.97) 0%, rgba(16, 10, 6, 0.99) 100%);
+            border-radius: 14px;
+            border: 1px solid rgba(217, 155, 38, 0.4);
+            border-top: 3px solid #f5b942;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.85);
+        }
+        .vn-choice-btn {
+            background: rgba(42, 26, 16, 0.92);
+            border-radius: 8px;
+            border: 1px solid rgba(217, 155, 38, 0.35);
+            border-left: 4px solid #f5b942;
+            color: #f5ebd6;
+            transition: all 0.15s ease;
+        }
+        .vn-choice-btn:hover {
+            background: rgba(158, 42, 34, 0.38);
+            border-color: #f5b942;
+            transform: translateX(4px);
+        }
+
+        .game-btn {
+            background: rgba(34, 21, 13, 0.94);
+            border-radius: 8px;
+            border: 1px solid rgba(217, 155, 38, 0.35);
+            color: #f5ebd6;
+            transition: all 0.14s ease;
+        }
+        .game-btn:hover {
+            background: rgba(56, 35, 22, 0.98);
+            border-color: #f5b942;
+            color: #fffbeb;
+        }
+        .game-btn-primary {
+            background: linear-gradient(135deg, #e5a93c 0%, #9e2a22 100%);
+            border-radius: 8px;
+            border: 1px solid #fde68a;
+            color: #fffbeb;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            box-shadow: 0 4px 14px rgba(158, 42, 34, 0.45);
+            transition: all 0.14s ease;
+        }
+        .game-btn-primary:hover {
+            filter: brightness(1.12);
+            transform: translateY(-1px);
+        }
+
+        .screen-layer {
+            transition: opacity 0.25s ease;
+        }
+        .screen-hidden {
+            display: none !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #canvas-container, #canvas-container canvas {
+            touch-action: none;
+            cursor: grab;
+        }
+        #canvas-container:active, #canvas-container canvas:active {
+            cursor: grabbing;
+        }
+
+        .quest-pin {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            cursor: pointer;
+            z-index: 15;
+            transition: transform 0.2s ease, opacity 0.25s ease;
+        }
+        .quest-pin:hover {
+            transform: translate(-50%, -106%) scale(1.06);
+        }
+        @keyframes float-bob {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-bob { animation: float-bob 2.4s ease-in-out infinite; }
+
+        @keyframes node-ring {
+            0% { transform: scale(0.95); opacity: 0.85; }
+            70% { transform: scale(1.3); opacity: 0; }
+            100% { transform: scale(1.3); opacity: 0; }
+        }
+        .map-node-active::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 9999px;
+            border: 2px solid #f3c46b;
+            animation: node-ring 1.8s infinite;
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+        ::-webkit-scrollbar-thumb { background: #7c4d25; }
+    </style>
+</head>
+<body class="select-none">
+
+    <!-- LIVE 3D WORLD BACKGROUND -->
+    <div id="canvas-container" class="fixed inset-0 w-full h-full z-0"></div>
+    <div id="world-pins-container" class="fixed inset-0 pointer-events-none overflow-hidden z-10 hidden"></div>
+
+    <!-- ===================================================================== -->
+    <!-- 1. LOADING SCREEN                                                     -->
+    <!-- ===================================================================== -->
+    <div id="screen-loading" class="fixed inset-0 z-50 flex flex-col items-start justify-end p-8 sm:p-14 bg-[#0d0906] transition-opacity duration-500">
+        <div class="flex items-center gap-4">
+            <div class="w-11 h-11 border border-[#c88a2b] bg-[#9e2a22]/80 flex items-center justify-center text-[#f3c46b] text-lg animate-spin" style="animation-duration: 6s;">
+                <i class="fa-solid fa-compass"></i>
+            </div>
+            <div>
+                <h2 class="font-display text-base sm:text-lg font-bold tracking-[0.2em] text-[#fbf6ec]">MEMUAT DUNIA HUMA BETANG</h2>
+                <p class="text-xs text-[#a8947a] tracking-wider mt-0.5">Menyiapkan arsitektur 3D & simulasi konseling Hapahari...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 2. MAIN MENU SCREEN                                                   -->
+    <!-- ===================================================================== -->
+    <section id="screen-main-menu" class="screen-layer fixed inset-0 z-30 flex items-stretch pointer-events-none">
+        <div class="studio-rail pointer-events-auto w-full sm:w-[430px] md:w-[470px] h-full flex flex-col justify-between px-7 sm:px-10 py-7 sm:py-10 overflow-y-auto">
+            <div>
+                <div class="flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.25em] text-[#c88a2b] uppercase">
+                    <span class="w-6 h-[1.5px] bg-[#c88a2b]"></span>
+                    <span>Simulasi Konseling Budaya</span>
+                </div>
+                <h1 class="font-display text-4xl sm:text-5xl font-bold text-[#fbf6ec] tracking-wide leading-none mt-3">
+                    HUMA<br>BETANG
+                </h1>
+                <div class="mt-2.5 inline-flex items-center gap-2 px-2.5 py-1 bg-[#9e2a22] border-l-2 border-[#f3c46b]">
+                    <span class="font-display text-xs sm:text-sm font-bold tracking-[0.22em] text-[#fbf6ec]">SANG PAMOMONG</span>
+                </div>
+                <p class="text-xs text-[#cbb89d] mt-3 max-w-xs leading-relaxed">
+                    Simulasi konseling lintas budaya SMA berbasis kearifan <em>Hapahari</em> dan <em>Belom Bahadat</em> dalam diorama 3D Huma Betang.
+                </p>
+            </div>
+
+            <nav class="my-auto py-4 space-y-1 border-y border-[#c88a2b]/20">
+                <button onclick="playUiClick(); openMapSelect()" class="menu-item-btn primary-item cursor-pointer">
+                    <i class="fa-solid fa-play text-sm w-5 text-center"></i>
+                    <div>
+                        <span class="font-display font-bold text-lg tracking-wider block">MULAI CERITA</span>
+                        <span class="text-[11px] text-[#cbb89d] font-normal">Ikuti kisah Raka, Sinta & Guru BK di 5 babak</span>
+                    </div>
+                </button>
+
+                <button onclick="playUiClick(); startFreeExplore()" class="menu-item-btn cursor-pointer">
+                    <i class="fa-solid fa-compass text-sm w-5 text-center text-[#f3c46b]"></i>
+                    <div>
+                        <span class="font-display font-bold text-base tracking-wider block">JELAJAH DIORAMA 3D</span>
+                        <span class="text-[11px] text-[#a8947a] font-normal">Tinjau arsitektur & fungsi konseling tiap ruang</span>
+                    </div>
+                </button>
+
+                <button onclick="playUiClick(); openModal('modal-codex')" class="menu-item-btn cursor-pointer">
+                    <i class="fa-solid fa-book-open text-sm w-5 text-center text-emerald-400"></i>
+                    <div>
+                        <span class="font-display font-bold text-base tracking-wider block">KITAB KEARIFAN</span>
+                        <span class="text-[11px] text-[#a8947a] font-normal">Riset istilah Dayak Ngaju & teknik BK</span>
+                    </div>
+                </button>
+
+                <button onclick="playUiClick(); openChatbot()" class="menu-item-btn cursor-pointer">
+                    <i class="fa-solid fa-comments text-sm w-5 text-center text-sky-400"></i>
+                    <div>
+                        <span class="font-display font-bold text-base tracking-wider block">TANYA PAMOMONG (AI)</span>
+                        <span class="text-[11px] text-[#a8947a] font-normal">Diskusi interaktif konseling Huma Betang</span>
+                    </div>
+                </button>
+
+                <button onclick="playUiClick(); openModal('modal-settings')" class="menu-item-btn cursor-pointer">
+                    <i class="fa-solid fa-sliders text-sm w-5 text-center text-[#c88a2b]"></i>
+                    <div>
+                        <span class="font-display font-bold text-base tracking-wider block">PENGATURAN</span>
+                        <span class="text-[11px] text-[#a8947a] font-normal">Narator suara, musik Sape & pencahayaan</span>
+                    </div>
+                </button>
+
+                <button onclick="playUiClick(); openCreditsModal()" class="menu-item-btn cursor-pointer">
+                    <i class="fa-solid fa-award text-sm w-5 text-center text-amber-300"></i>
+                    <div>
+                        <span class="font-display font-bold text-base tracking-wider block">KREDIT TIM</span>
+                        <span class="text-[11px] text-[#a8947a] font-normal">Profil kelompok & pengembang karya</span>
+                    </div>
+                </button>
+            </nav>
+
+            <div class="flex items-center justify-between text-xs text-[#9c876c] pt-2">
+                <button onclick="playUiClick(); toggleMusic()" class="flex items-center gap-2 px-3 py-1.5 bg-[#18100b] border border-[#5c3a1d] hover:border-[#c88a2b] text-[#e6d5b8] cursor-pointer transition-colors">
+                    <i id="menu-music-icon" class="fa-solid fa-volume-xmark text-[#f3c46b]"></i>
+                    <span id="menu-music-label" class="font-semibold tracking-wide">Musik Sape: MATI</span>
+                </button>
+                <span class="tracking-widest uppercase text-[10px]">Ver 1.0 • Konseling Huma Betang</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- 3. MAP / CHAPTER SELECTION SCREEN                                     -->
+    <!-- ===================================================================== -->
+    <section id="screen-map-select" class="screen-layer screen-hidden fixed inset-0 z-30 flex flex-col bg-[#0d0906]/95">
+        <div class="px-6 py-3.5 border-b border-[#5c3a1d] flex justify-between items-center bg-[#120b07]">
+            <div class="flex items-center gap-3.5">
+                <button onclick="playUiClick(); returnToMainMenu()" class="game-btn px-3.5 py-2 text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-arrow-left text-[#f3c46b]"></i> Menu Utama
+                </button>
+                <div class="h-6 w-[1px] bg-[#5c3a1d]"></div>
+                <div>
+                    <span class="text-[10px] uppercase tracking-[0.22em] text-[#c88a2b] font-bold block">Peta Wilayah Konseling</span>
+                    <h2 class="font-display text-base sm:text-lg font-bold text-[#fbf6ec] tracking-wide">KOMPLEKS HUMA BETANG</h2>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+                <span class="hidden sm:inline text-[#a8947a]">Progres Babak:</span>
+                <div class="px-3 py-1.5 bg-[#1a110b] border-l-2 border-[#c88a2b] font-bold text-[#fbf6ec]">
+                    <span id="map-progress-text">0 / 5 Wilayah</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+            <div class="lg:col-span-7 xl:col-span-8 relative bg-[#142117] border-b lg:border-b-0 lg:border-r border-[#5c3a1d] flex items-center justify-center overflow-hidden min-h-[250px]">
+                <svg viewBox="0 0 900 360" class="w-full h-full object-cover select-none" preserveAspectRatio="xMidYMid slice">
+                    <defs>
+                        <radialGradient id="islandGrad" cx="50%" cy="50%" r="60%">
+                            <stop offset="0%" stop-color="#2e5233" />
+                            <stop offset="68%" stop-color="#1b331f" />
+                            <stop offset="100%" stop-color="#0f1c11" />
+                        </radialGradient>
+                    </defs>
+                    <rect width="900" height="360" fill="url(#islandGrad)" />
+                    <ellipse cx="450" cy="175" rx="390" ry="145" fill="none" stroke="#4ade80" stroke-width="0.8" opacity="0.14" />
+                    <ellipse cx="450" cy="175" rx="320" ry="112" fill="none" stroke="#4ade80" stroke-width="0.8" opacity="0.18" />
+                    <path d="M -20,305 Q 220,265 450,310 T 920,280 L 920,370 L -20,370 Z" fill="#132b36" opacity="0.85" />
+                    <rect x="225" y="75" width="450" height="135" fill="#26160c" stroke="#9e652b" stroke-width="2" />
+                    <rect x="242" y="90" width="416" height="48" fill="#331e11" stroke="#613b20" stroke-width="1.2" />
+                    <rect x="242" y="146" width="416" height="48" fill="#3f2616" stroke="#613b20" stroke-width="1.2" />
+                    <text x="450" y="60" text-anchor="middle" fill="#c88a2b" font-family="Cormorant Garamond, serif" font-size="13" font-weight="bold" letter-spacing="3">DENAH ARSITEKTUR HUMA BETANG</text>
+
+                    <path d="M 135,230 C 210,240 255,175 315,175 C 385,175 415,120 475,120 C 540,120 575,175 635,175 C 695,175 730,230 785,220"
+                          fill="none" stroke="#0d0704" stroke-width="7" stroke-linecap="round" />
+                    <path d="M 135,230 C 210,240 255,175 315,175 C 385,175 415,120 475,120 C 540,120 575,175 635,175 C 695,175 730,230 785,220"
+                          fill="none" stroke="#f3c46b" stroke-width="2.5" stroke-dasharray="8 7" stroke-linecap="round" />
+                </svg>
+
+                <div id="overworld-nodes-layer" class="absolute inset-0"></div>
+
+                <div class="absolute bottom-3 left-4 text-[11px] text-[#cbb89d] bg-[#0e0805]/85 px-3 py-1 border-l-2 border-[#c88a2b]">
+                    <i class="fa-solid fa-computer-mouse text-[#f3c46b] mr-1.5"></i> Klik titik wilayah pada peta untuk melihat detail kasus konseling
+                </div>
+            </div>
+
+            <div id="map-briefing-card" class="lg:col-span-5 xl:col-span-4 bg-[#140c07] p-5 sm:p-7 flex flex-col justify-between overflow-y-auto"></div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- 4. IN-GAME HUD & THEATRE VISUAL NOVEL DIALOGUE SYSTEM                 -->
+    <!-- ===================================================================== -->
+    <section id="screen-gameplay" class="screen-layer screen-hidden fixed inset-0 z-20 pointer-events-none flex flex-col justify-between">
+        <!-- TOP HUD BAR -->
+        <div class="flex flex-wrap justify-between items-start gap-3 p-3.5 sm:p-5 pointer-events-auto">
+            <div class="studio-hud-plate px-3.5 py-2 flex items-center gap-3 max-w-md">
+                <button id="hud-btn-nav" onclick="playUiClick(); openMapSelect()" class="game-btn px-3 py-1.5 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shrink-0">
+                    <i id="hud-icon-nav" class="fa-solid fa-map text-[#f3c46b]"></i>
+                    <span id="hud-text-nav">Peta</span>
+                </button>
+                <div class="h-6 w-[1px] bg-[#5c3a1d]"></div>
+                <div class="min-w-0">
+                    <span id="hud-stage-label" class="text-[10px] uppercase tracking-[0.2em] text-[#f3c46b] font-bold block truncate">Mode Jelajah Bebas</span>
+                    <h3 id="hud-location-title" class="font-display text-sm sm:text-base font-bold text-[#fbf6ec] truncate">Kompleks Huma Betang</h3>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <div id="hud-harmony-box" class="studio-hud-plate px-3.5 py-2 flex items-center gap-3">
+                    <div>
+                        <div class="flex justify-between items-center text-[10px] uppercase tracking-widest font-bold text-[#cbb89d] mb-1">
+                            <span>Harmoni Hapahari</span>
+                            <span id="hud-harmony-val" class="text-[#f3c46b] ml-3">60%</span>
+                        </div>
+                        <div class="w-24 sm:w-32 h-2 bg-[#0a0503] overflow-hidden border border-[#5c3a1d]">
+                            <div id="hud-harmony-bar" class="h-full bg-gradient-to-r from-[#b91c1c] via-[#c88a2b] to-[#10b981] transition-all duration-500" style="width: 60%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="playUiClick(); toggleRoof()" id="hud-btn-roof" class="game-btn px-3 py-2.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer" title="Buka/Tutup Atap Sirap">
+                    <i id="hud-icon-roof" class="fa-solid fa-house-chimney-crack text-[#f3c46b]"></i>
+                    <span id="hud-text-roof" class="hidden sm:inline">Buka Atap</span>
+                </button>
+
+                <button onclick="playUiClick(); openModal('modal-codex')" class="game-btn px-3 py-2.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer" title="Kitab Kearifan">
+                    <i class="fa-solid fa-book-open text-emerald-400"></i>
+                </button>
+
+                <button onclick="playUiClick(); openChatbot()" class="game-btn px-3 py-2.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer" title="Diskusi dengan Pamomong AI">
+                    <i class="fa-solid fa-comments text-sky-400"></i>
+                    <span class="hidden md:inline">Tanya AI</span>
+                </button>
+
+                <button onclick="playUiClick(); openModal('modal-settings')" class="game-btn px-3 py-2.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer" title="Pengaturan">
+                    <i class="fa-solid fa-sliders text-[#f3c46b]"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- BOTTOM: VISUAL NOVEL DIALOGUE BOX -->
+        <div id="dialogue-container" class="pointer-events-auto w-full vn-stage-gradient pt-8 pb-4 px-3 sm:px-8 transition-all duration-300 translate-y-6 opacity-0 hidden">
+            <div class="max-w-4xl mx-auto vn-dialogue-plate p-4 sm:p-5 relative">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <div class="flex items-center gap-2.5">
+                        <span id="dlg-speaker-badge" class="px-3 py-1 bg-[#9e2a22] text-[#fbf6ec] font-display text-sm font-bold tracking-wider uppercase">
+                            Guru BK (Pamomong)
+                        </span>
+                        <span id="dlg-stage-chip" class="text-[11px] font-medium text-[#cbb89d] hidden sm:inline-block">
+                            Babak 1
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-xs text-[#cbb89d]">
+                        <span id="dlg-step-counter" class="text-[11px] font-bold text-[#f3c46b] px-2">1 / 4</span>
+                        <button onclick="playUiClick(); replayNarration()" class="game-btn px-2 py-1 text-xs flex items-center gap-1 cursor-pointer" title="Bacakan Ulang Dialog">
+                            <i id="dlg-voice-icon" class="fa-solid fa-volume-high text-[#f3c46b]"></i>
+                        </button>
+                        <button onclick="playUiClick(); closeDialogue()" class="game-btn px-2 py-1 text-xs cursor-pointer" title="Keluar ke Jelajah Bebas">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 items-start">
+                    <div id="dlg-portrait-frame" class="w-12 h-12 sm:w-14 sm:h-14 bg-[#120b07] border border-[#c88a2b]/50 flex flex-col items-center justify-center shrink-0">
+                        <i id="dlg-portrait-icon" class="fa-solid fa-user-tie text-lg sm:text-2xl text-[#f3c46b]"></i>
+                        <span id="dlg-portrait-role" class="text-[9px] uppercase tracking-wider font-semibold text-[#a8947a] mt-0.5">Pamomong</span>
+                    </div>
+
+                    <div class="flex-1 w-full min-w-0">
+                        <p id="dlg-text" class="text-sm sm:text-base text-[#fbf6ec] leading-relaxed font-normal min-h-[3.2rem] cursor-pointer" onclick="finishTypewriterInstantly()" title="Klik untuk menampilkan teks penuh">
+                            Teks narasi atau percakapan akan muncul di sini.
+                        </p>
+
+                        <div class="mt-2.5 pt-2 border-t border-[#f3ead8]/10 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#cbb89d]">
+                            <div>
+                                <span class="text-[#c88a2b] font-bold uppercase tracking-wider mr-1.5">Teknik BK:</span>
+                                <span id="dlg-technique">Attending & Cultural Greeting</span>
+                            </div>
+                        </div>
+
+                        <div id="dlg-choices-area" class="mt-3 space-y-2 hidden"></div>
+
+                        <div id="dlg-nav-area" class="mt-3 flex justify-between items-center">
+                            <button onclick="playUiClick(); prevDialogueStep()" id="btn-dlg-prev" class="game-btn px-3.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-chevron-left text-[10px]"></i> Sebelumnya
+                            </button>
+                            <button id="btn-dlg-next" class="game-btn-primary px-5 py-2 text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2 cursor-pointer">
+                                <span>Lanjutkan</span> <i class="fa-solid fa-chevron-right text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FREE EXPLORE LORE INSPECTOR -->
+        <div id="free-explore-lore-card" class="pointer-events-auto w-full max-w-2xl ml-3.5 sm:ml-5 mr-3.5 mb-2 hidden">
+            <div class="vn-dialogue-plate border-l-4 border-l-[#c88a2b] p-4 sm:p-5">
+                <div class="flex justify-between items-start gap-3 border-b border-[#f3ead8]/10 pb-2.5 mb-2.5">
+                    <div>
+                        <span id="lore-badge" class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#f3c46b]">Arsitektur & Konseling</span>
+                        <h4 id="lore-title" class="font-display text-lg font-bold text-[#fbf6ec] mt-0.5">Nama Lokasi Huma Betang</h4>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button onclick="playUiClick(); speakExploreLore()" class="game-btn px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer" title="Dengarkan Narator">
+                            <i class="fa-solid fa-volume-high text-[#f3c46b]"></i> <span>Narator</span>
+                        </button>
+                        <button onclick="playUiClick(); closeExploreLore()" class="game-btn px-2.5 py-1.5 text-xs font-bold cursor-pointer" title="Tutup">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+                <p id="lore-desc" class="text-xs sm:text-sm text-[#e6d5b8] leading-relaxed"></p>
+                <div class="mt-3 pt-2.5 border-t border-[#f3ead8]/10 text-xs text-[#cbb89d]">
+                    <span class="text-[#f3c46b] font-bold uppercase tracking-wider block mb-0.5">Fungsi Konseling Siswa:</span>
+                    <span id="lore-counseling"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- FREE EXPLORE WAYPOINT DOCK -->
+        <div id="free-explore-bar" class="pointer-events-none w-full pt-4 pb-3 px-4 flex flex-wrap items-center justify-center gap-2">
+            <div class="pointer-events-auto bg-[#120c08]/92 backdrop-blur-md border border-[#f3ead8]/15 px-3 py-2 flex flex-wrap items-center justify-center gap-2">
+                <span class="text-[11px] uppercase tracking-widest text-[#a8947a] mr-1 hidden md:inline">Tinjau Bagian:</span>
+                <button onclick="playUiClick(); inspectLocation(0)" class="game-btn px-3 py-1.5 text-xs font-semibold cursor-pointer">01. Teras Pante</button>
+                <button onclick="playUiClick(); inspectLocation(1)" class="game-btn px-3 py-1.5 text-xs font-semibold cursor-pointer">02. Ruang Los</button>
+                <button onclick="playUiClick(); inspectLocation(2)" class="game-btn px-3 py-1.5 text-xs font-semibold cursor-pointer">03. Pilar Tengah</button>
+                <button onclick="playUiClick(); inspectLocation(3)" class="game-btn px-3 py-1.5 text-xs font-semibold cursor-pointer">04. Bilik Privat</button>
+                <button onclick="playUiClick(); inspectLocation(4)" class="game-btn px-3 py-1.5 text-xs font-semibold cursor-pointer">05. Batang Garing</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- 5. SETTINGS MODAL                                                     -->
+    <!-- ===================================================================== -->
+    <div id="modal-settings" class="fixed inset-0 z-40 hidden items-center justify-center p-4 bg-black/75">
+        <div class="vn-dialogue-plate w-full max-w-md overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-[#f3ead8]/10 flex justify-between items-center bg-[#120b07]">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-sliders text-[#f3c46b]"></i>
+                    <h3 class="font-display text-base font-bold tracking-wider uppercase text-[#fbf6ec]">Pengaturan Sistem</h3>
+                </div>
+                <button onclick="closeModal('modal-settings')" class="game-btn w-8 h-8 flex items-center justify-center cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-3 text-sm">
+                <div class="flex items-center justify-between p-3 bg-[#140c07] border-l-2 border-[#c88a2b]">
+                    <div>
+                        <span class="font-bold text-[#fbf6ec] block text-xs sm:text-sm">Suara Narator (Indonesia)</span>
+                        <span class="text-[11px] text-[#a8947a]">Membacakan dialog & penjelasan ruang</span>
+                    </div>
+                    <button onclick="toggleNarrator()" id="set-btn-narrator" class="game-btn-primary px-3.5 py-1.5 text-xs cursor-pointer">
+                        AKTIF
+                    </button>
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-[#140c07] border-l-2 border-[#c88a2b]">
+                    <div>
+                        <span class="font-bold text-[#fbf6ec] block text-xs sm:text-sm">Musik Latar Sape</span>
+                        <span class="text-[11px] text-[#a8947a]">Instrumen pentatonik tradisional</span>
+                    </div>
+                    <button onclick="toggleMusic()" id="set-btn-music" class="game-btn px-3.5 py-1.5 text-xs font-bold cursor-pointer">
+                        MATI
+                    </button>
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-[#140c07] border-l-2 border-[#c88a2b]">
+                    <div>
+                        <span class="font-bold text-[#fbf6ec] block text-xs sm:text-sm">Pencahayaan Dunia</span>
+                        <span class="text-[11px] text-[#a8947a]">Pagi cerah atau senja hangat</span>
+                    </div>
+                    <button onclick="toggleDayNight()" id="set-btn-time" class="game-btn px-3.5 py-1.5 text-xs font-bold cursor-pointer">
+                        Pagi Cerah
+                    </button>
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-[#140c07] border-l-2 border-[#c88a2b]">
+                    <div>
+                        <span class="font-bold text-[#fbf6ec] block text-xs sm:text-sm">Penanda Lokasi 3D</span>
+                        <span class="text-[11px] text-[#a8947a]">Pin penunjuk interaktif saat jelajah bebas</span>
+                    </div>
+                    <button onclick="togglePins()" id="set-btn-pins" class="game-btn-primary px-3.5 py-1.5 text-xs cursor-pointer">
+                        TAMPIL
+                    </button>
+                </div>
+
+                <div class="pt-3 flex justify-between gap-2">
+                    <button onclick="resetCamera(); closeModal('modal-settings');" class="game-btn flex-1 py-2.5 text-xs font-semibold cursor-pointer">
+                        <i class="fa-solid fa-camera-rotate mr-1 text-[#f3c46b]"></i> Reset Kamera
+                    </button>
+                    <button onclick="closeModal('modal-settings')" class="game-btn-primary flex-1 py-2.5 text-xs uppercase tracking-wider cursor-pointer">
+                        Terapkan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 5B. CREDITS / TIM PENGEMBANG MODAL                                    -->
+    <!-- ===================================================================== -->
+    <div id="modal-credits" class="fixed inset-0 z-40 hidden items-center justify-center p-4 bg-black/80">
+        <div class="vn-dialogue-plate w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden">
+            <div class="px-5 py-4 border-b border-[#f3ead8]/10 flex justify-between items-center bg-[#120b07]">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-[#9e2a22] border border-[#c88a2b] flex items-center justify-center text-[#f3c46b]">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                    <div>
+                        <span class="text-[10px] uppercase tracking-[0.22em] text-[#f3c46b] font-bold block">Daftar</span>
+                        <h3 class="font-display text-lg font-bold tracking-wider uppercase text-[#fbf6ec]">Tim Pengembang</h3>
+                    </div>
+                </div>
+                <button onclick="closeModal('modal-credits')" class="game-btn w-8 h-8 flex items-center justify-center cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-5 sm:p-6 overflow-y-auto space-y-5">
+                <div class="p-4 bg-[#140c07] border border-[#f3ead8]/15 border-l-2 border-l-[#c88a2b] text-center">
+                    <p id="credits-group-name" class="font-display text-xl font-bold text-[#f3c46b] tracking-wider uppercase">
+                        KELOMPOK 3 • KONSELING HUMA BETANG
+                    </p>
+                    <p id="credits-institution" class="text-xs text-[#cbb89d] mt-1">
+                        Program Studi Bimbingan dan Konseling • Media Simulasi Interaktif 3D
+                    </p>
+                </div>
+
+                <div id="credits-members-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+
+                <div class="pt-3 border-t border-[#f3ead8]/10 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#a8947a]">
+                    <span><i class="fa-solid fa-feather-pointed text-[#c88a2b] mr-1.5"></i> <em>"Hapahari & Belom Bahadat — Hidup Beradat & Bersaudara"</em></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 6. CODEX / KITAB BUDAYA MODAL                                         -->
+    <!-- ===================================================================== -->
+    <div id="modal-codex" class="fixed inset-0 z-40 hidden items-center justify-center p-4 bg-black/75">
+        <div class="vn-dialogue-plate w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-[#f3ead8]/10 flex justify-between items-center bg-[#120b07]">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-book-journal-whills text-emerald-400"></i>
+                    <h3 class="font-display text-base font-bold tracking-wider uppercase text-[#fbf6ec]">Kitab Kearifan Konseling Huma Betang</h3>
+                </div>
+                <button onclick="closeModal('modal-codex')" class="game-btn w-8 h-8 flex items-center justify-center cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-3">
+                <div class="p-3.5 bg-[#140c07] border-l-2 border-[#c88a2b]">
+                    <h4 class="font-display font-bold text-[#f3c46b] text-base">01. Manarima & Mamapas (Penerimaan Tanpa Prasangka)</h4>
+                    <p class="text-xs text-[#e6d5b8] mt-1 leading-relaxed">Dalam tradisi tamu Huma Betang, pendatang disambut dengan salam <em>"Tabe"</em> dan prinsip <em>"uras itah, jaton oloh beken hetoh"</em> (semua saudara, tidak ada orang asing). Dalam BK, hal ini diwujudkan melalui <em>attending</em> dan penerimaan tanpa syarat (<em>unconditional positive regard</em>).</p>
+                </div>
+                <div class="p-3.5 bg-[#140c07] border-l-2 border-[#c88a2b]">
+                    <h4 class="font-display font-bold text-[#f3c46b] text-base">02. Basarah & Hapahari (Keterbukaan & Persaudaraan)</h4>
+                    <p class="text-xs text-[#e6d5b8] mt-1 leading-relaxed"><strong>Hapahari</strong> berakar dari kata <em>pahari</em> (saudara) dengan semangat <em>"sama keme, sama mangat, sama susah"</em> (senasib sepenanggungan). Dipadukan dengan <strong>Basarah</strong> (keterbukaan mencurahkan isi hati secara tulus) di Ruang Los yang tanpa sekat status.</p>
+                </div>
+                <div class="p-3.5 bg-[#140c07] border-l-2 border-[#c88a2b]">
+                    <h4 class="font-display font-bold text-[#f3c46b] text-base">03. Manimbang dengan Batang Garing</h4>
+                    <p class="text-xs text-[#e6d5b8] mt-1 leading-relaxed"><strong>Batang Garing</strong> (Pohon Kehidupan Dayak Ngaju) melambangkan keselarasan kosmologis dunia atas dan dunia bawah/alam. Dalam BK, digunakan untuk klarifikasi nilai (<em>values clarification</em>) antara relasi sosial, martabat, dan tanggung jawab.</p>
+                </div>
+                <div class="p-3.5 bg-[#140c07] border-l-2 border-[#c88a2b]">
+                    <h4 class="font-display font-bold text-[#f3c46b] text-base">04. Hapakat Kula & Handep (Musyawarah & Gotong Royong)</h4>
+                    <p class="text-xs text-[#e6d5b8] mt-1 leading-relaxed"><strong>Hapakat Kula</strong> adalah musyawarah mufakat kekeluargaan, sedangkan <strong>Handep</strong> adalah tradisi tolong-menolong timbal balik yang diadaptasi menjadi dukungan teman sebaya (<em>peer support</em>) setelah asas kerahasiaan di Bilik Privat terjaga.</p>
+                </div>
+                <div class="p-3.5 bg-[#140c07] border-l-2 border-[#c88a2b]">
+                    <h4 class="font-display font-bold text-[#f3c46b] text-base">05. Belom Bahadat & Isen Mulang</h4>
+                    <p class="text-xs text-[#e6d5b8] mt-1 leading-relaxed"><strong>Belom Bahadat</strong> bermakna hidup beradat, beretika, dan menjunjung tinggi martabat sesama manusia, disertai semangat <strong>Isen Mulang</strong> (pantang mundur dalam kebaikan) sebagai karakter utama pelajar multikultural.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 7. PAMOMONG AI CHATBOT MODAL                                          -->
+    <!-- ===================================================================== -->
+    <div id="modal-chatbot" class="fixed inset-0 z-40 hidden items-center justify-center p-3 sm:p-5 bg-black/75">
+        <div class="vn-dialogue-plate w-full max-w-2xl h-[86vh] flex flex-col overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-[#f3ead8]/10 flex justify-between items-center bg-[#120b07] shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-[#9e2a22] border border-[#c88a2b] flex items-center justify-center text-[#f3c46b]">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <div>
+                        <span id="chat-mode-badge" class="text-[10px] uppercase tracking-[0.2em] text-[#f3c46b] font-bold block">Asisten Konseling • Mode Pakar Lokal</span>
+                        <h3 class="font-display text-base font-bold text-[#fbf6ec]">Diskusi Bersama Sang Pamomong</h3>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="playUiClick(); toggleApiKeyPanel()" class="game-btn px-2.5 py-1.5 text-xs flex items-center gap-1.5 cursor-pointer" title="Atur API Key Gemini">
+                        <i class="fa-solid fa-key text-[#f3c46b]"></i> <span class="hidden sm:inline">API Key</span>
+                    </button>
+                    <button onclick="playUiClick(); resetChatHistory()" class="game-btn px-2.5 py-1.5 text-xs flex items-center gap-1.5 cursor-pointer" title="Mulai Obrolan Baru">
+                        <i class="fa-solid fa-rotate-right text-[#f3c46b]"></i> <span class="hidden sm:inline">Reset</span>
+                    </button>
+                    <button onclick="playUiClick(); closeModal('modal-chatbot')" class="game-btn w-8 h-8 flex items-center justify-center cursor-pointer" title="Tutup">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="chat-apikey-panel" class="hidden px-4 py-3 bg-[#18100b] border-b border-[#5c3a1d] shrink-0">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="text-[11px] text-[#cbb89d]">
+                        <strong class="text-[#f3c46b] block">Koneksi Gemini API (Opsional):</strong>
+                        <span>Tanpa API Key pun chatbot menjawab lewat Mode Pakar Lokal. Masukkan API Key Gemini untuk respons AI generatif penuh (disimpan aman di browser Anda).</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <input id="gemini-apikey-input" type="password" placeholder="Tempel AIzaSy..." class="bg-[#0e0805] border border-[#6e4422] px-2.5 py-1.5 text-xs text-[#fbf6ec] w-40 focus:border-[#f3c46b] focus:outline-none" />
+                        <button onclick="saveGeminiApiKey()" class="game-btn-primary px-3 py-1.5 text-xs uppercase cursor-pointer">Simpan</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chat-messages-feed" class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 bg-[#0e0906]"></div>
+
+            <div class="px-4 py-2 bg-[#130b07] border-t border-[#f3ead8]/10 flex items-center gap-2 overflow-x-auto shrink-0">
+                <span class="text-[10px] uppercase tracking-wider text-[#a8947a] font-bold shrink-0">Topik Cepat:</span>
+                <button onclick="sendSuggestedQuestion('Apa makna filosofi Hapahari dalam mencegah perundungan antarsuku di sekolah?')" class="game-btn px-2.5 py-1 text-[11px] whitespace-nowrap cursor-pointer">
+                    Filosofi Hapahari & Bullying
+                </button>
+                <button onclick="sendSuggestedQuestion('Bagaimana menerapkan 5 tahapan konseling Huma Betang untuk siswa pindahan yang mengalami gegar budaya?')" class="game-btn px-2.5 py-1 text-[11px] whitespace-nowrap cursor-pointer">
+                    Kasus Gegar Budaya Siswa
+                </button>
+                <button onclick="sendSuggestedQuestion('Apa hubungan Batang Garing dan Belom Bahadat dalam pembentukan karakter peserta didik?')" class="game-btn px-2.5 py-1 text-[11px] whitespace-nowrap cursor-pointer">
+                    Batang Garing & Belom Bahadat
+                </button>
+            </div>
+
+            <form onsubmit="handleChatSubmit(event)" class="p-3 sm:p-4 bg-[#120b07] border-t border-[#f3ead8]/10 flex items-center gap-2.5 shrink-0">
+                <input
+                    id="chat-user-input"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="Tanyakan filosofi Huma Betang, tahapan konseling, atau diskusikan kasus siswa..."
+                    class="flex-1 bg-[#1b100a] border border-[#6e4422] focus:border-[#f3c46b] focus:outline-none px-3.5 py-2.5 text-xs sm:text-sm text-[#fbf6ec] placeholder-[#8c785d]"
+                />
+                <button id="chat-send-btn" type="submit" class="game-btn-primary px-4 sm:px-5 py-2.5 text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2 cursor-pointer shrink-0">
+                    <span>Kirim</span> <i class="fa-solid fa-paper-plane text-xs"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- JAVASCRIPT: CLEAN, MODULAR, SYNCHRONIZED 3D + VISUAL NOVEL ENGINE     -->
+    <!-- ===================================================================== -->
+    <script>
+        // =====================================================================
+        // 1. STATE, CREDITS DATA & AUDIO / VOICE SYNTHESIS
+        // =====================================================================
+        let currentScreen = 'loading';
+        let activeChapterIdx = null;
+        let activeStepIdx = 0;
+        let activeExploreIdx = 0;
+        let selectedMapChapterIdx = 0;
+        let completedChapters = [false, false, false, false, false];
+        let harmonyScore = 60;
+        let roofOpen = false;
+        let isSunset = false;
+        let showPins = true;
+        let narratorEnabled = true;
+        let musicPlaying = false;
+        let typewriterTimer = null;
+        let fullDialogueText = "";
+        let sapeLoop = null;
+        let sapeSynth = null;
+        let characters = {};
+        let walkSequence = null;
+
+        // =================================================================
+        // KONFIGURASI NAMA & NIM TIM PENGEMBANG (EDIT LANGSUNG DI SINI)
+        // =================================================================
+        const DEFAULT_CREDITS_DATA = {
+            groupName: "KELOMPOK 3 • KONSELING HUMA BETANG",
+            institution: "Program Studi Bimbingan dan Konseling • Media Simulasi Interaktif 3D",
+            members: [
+                { name: "Nofi Mustikasari", nim: "NIM: 2330202160001", icon: "fa-user-graduate" },
+                { name: "Dewi Virna Sipayung", nim: "NIM: 2330202160033", icon: "fa-user-graduate" },
+                { name: "Altharia Paulina", nim: "NIM: 2330102160018", icon: "fa-user-graduate" },
+                { name: "Silfia Puti Naibaho", nim: "NIM: 2330202160036", icon: "fa-user-graduate" },
+                { name: "Bernadet Jelita M Lumbantungkup", nim: "NIM: 2330202160028", icon: "fa-user-graduate" },
+                { name: "Keren Monika", nim: "NIM: 2330202160021", icon: "fa-user-graduate" },
+                { name: "Siti Citra Taruna", nim: "NIM: 2330102160010", icon: "fa-user-graduate" },
+                { name: "Novita Keristina Br Saragih", nim: "NIM: 2330202160025", icon: "fa-user-graduate" },
+                { name: "Rima Dwi Apriliya", nim: "NIM: 2330202160006", icon: "fa-user-graduate" },
+                { name: "Fatthiya Azzahra", nim: "NIM: 2330202160031", icon: "fa-user-graduate" },
+                { name: "Sulistiawati", nim: "NIM: 2330102160016", icon: "fa-user-graduate" },
+                { name: "Habsari Ramalia Putri", nim: "NIM: 2330202160024", icon: "fa-user-graduate" }
+            ]
+        };
+
+        function openCreditsModal() {
+            const groupEl = document.getElementById('credits-group-name');
+            const instEl = document.getElementById('credits-institution');
+            const gridEl = document.getElementById('credits-members-grid');
+            if (groupEl) groupEl.textContent = DEFAULT_CREDITS_DATA.groupName;
+            if (instEl) instEl.textContent = DEFAULT_CREDITS_DATA.institution;
+            if (gridEl) {
+                gridEl.innerHTML = DEFAULT_CREDITS_DATA.members.map((m) => `
+                    <div class="p-3.5 bg-[#140c07] border border-[#5c3a1d] border-l-4 border-l-[#d99b26] flex items-center gap-3">
+                        <div class="w-9 h-9 bg-[#26160c] border border-[#8c5a2b] flex items-center justify-center text-[#f5b942] shrink-0">
+                            <i class="fa-solid ${m.icon || 'fa-user-graduate'}"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-display text-sm sm:text-base font-bold text-[#fffbeb] truncate">${m.name}</h4>
+                            <p class="text-xs text-[#cbb89d] truncate mt-0.5">${m.nim}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            openModal('modal-credits');
+        }
+
+        function playUiClick() {
+            try {
+                if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state === 'running') {
+                    const clickSynth = new Tone.MembraneSynth({
+                        pitchDecay: 0.01,
+                        octaves: 2,
+                        envelope: { attack: 0.001, decay: 0.05, sustain: 0 }
+                    }).toDestination();
+                    clickSynth.volume.value = -16;
+                    clickSynth.triggerAttackRelease("G4", "32n");
+                }
+            } catch (e) {}
+        }
+
+        async function toggleMusic() {
+            const menuIcon = document.getElementById('menu-music-icon');
+            const menuLabel = document.getElementById('menu-music-label');
+            const setBtn = document.getElementById('set-btn-music');
+
+            try {
+                if (typeof Tone !== 'undefined') {
+                    if (!musicPlaying) {
+                        await Tone.start();
+                        if (!sapeSynth) {
+                            sapeSynth = new Tone.PluckSynth({
+                                attackNoise: 1.2,
+                                dampening: 3200,
+                                resonance: 0.92
+                            }).toDestination();
+                            sapeSynth.volume.value = -10;
+
+                            const scale = ["D3", "F3", "G3", "A3", "C4", "D4", "F4", "A4"];
+                            let step = 0;
+                            sapeLoop = new Tone.Loop((time) => {
+                                const note = scale[step % scale.length];
+                                sapeSynth.triggerAttackRelease(note, "4n", time);
+                                if (step % 4 === 0) {
+                                    sapeSynth.triggerAttackRelease("D2", "2n", time);
+                                }
+                                step = (step + 1 + (step % 3 === 0 ? 1 : 0)) % scale.length;
+                            }, "4n");
+                        }
+                        Tone.Transport.bpm.value = 76;
+                        sapeLoop.start(0);
+                        Tone.Transport.start();
+                        musicPlaying = true;
+                    } else {
+                        if (sapeLoop) sapeLoop.stop();
+                        Tone.Transport.stop();
+                        musicPlaying = false;
+                    }
+                }
+            } catch (e) {
+                musicPlaying = false;
+            }
+
+            if (menuIcon) {
+                menuIcon.className = musicPlaying
+                    ? "fa-solid fa-volume-high text-emerald-400"
+                    : "fa-solid fa-volume-xmark text-[#f3c46b]";
+            }
+            if (menuLabel) {
+                menuLabel.textContent = musicPlaying ? "Musik Sape: AKTIF" : "Musik Sape: MATI";
+            }
+            if (setBtn) {
+                setBtn.textContent = musicPlaying ? "AKTIF" : "MATI";
+                setBtn.className = musicPlaying
+                    ? "game-btn-primary px-3.5 py-1.5 text-xs cursor-pointer"
+                    : "game-btn px-3.5 py-1.5 text-xs font-bold cursor-pointer";
+            }
+        }
+
+        function toggleNarrator() {
+            playUiClick();
+            narratorEnabled = !narratorEnabled;
+            const btn = document.getElementById('set-btn-narrator');
+            if (btn) {
+                btn.textContent = narratorEnabled ? "AKTIF" : "MATI";
+                btn.className = narratorEnabled
+                    ? "game-btn-primary px-3.5 py-1.5 text-xs cursor-pointer"
+                    : "game-btn px-3.5 py-1.5 text-xs font-bold cursor-pointer";
+            }
+            if (!narratorEnabled) {
+                try { window.speechSynthesis.cancel(); } catch (e) {}
+            }
+        }
+
+        function speakText(text) {
+            if (!narratorEnabled || !text) return;
+            try {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const utter = new SpeechSynthesisUtterance(text);
+                    utter.lang = 'id-ID';
+                    utter.rate = 0.98;
+                    utter.pitch = 1.0;
+                    window.speechSynthesis.speak(utter);
+                }
+            } catch (e) {}
+        }
+
+        // =====================================================================
+        // 2. CONTINUOUS STORYLINE DATA (SPEAKER, SCENE & ANIMATION IN SYNC)
+        // =====================================================================
+        const CHAPTERS_DATA = [
+            {
+                id: 0,
+                badge: "Babak 01 • Manarima & Mamapas",
+                location: "Hejan & Teras Pante",
+                shortTitle: "Teras Pante",
+                subtitle: "Menyambut Raka & Sinta Tanpa Prasangka",
+                mapPos: { left: "15%", top: "63%" },
+                worldPin: new THREE.Vector3(0, 4.2, 6.2),
+                camPos: new THREE.Vector3(3.8, 4.6, 12.8),
+                camTarget: new THREE.Vector3(-0.2, 2.2, 5.2),
+                loreDesc: "Hejan (tangga kayu ulin) dan Teras Pante adalah teras depan Huma Betang. Tamu disambut dengan salam 'Tabe' dan prinsip 'uras itah, jaton oloh beken hetoh' (semua bersaudara, tiada orang asing).",
+                loreCounseling: "Menerapkan teknik Attending & Unconditional Positive Regard (Manarima & Mamapas) untuk menurunkan ketegangan awal siswa sebelum masuk ke inti persoalan.",
+                steps: [
+                    {
+                        speaker: "Guru BK (Sang Pamomong)",
+                        role: "Pamomong",
+                        icon: "fa-user-tie",
+                        stageChip: "Babak 1 • Naik Tangga Hejan",
+                        technique: "Attending & Cultural Greeting (Tabe)",
+                        sceneAction: "ch1_climb_stairs",
+                        focusChar: "teacher",
+                        text: "Tabe, Raka dan Sinta. Mari silakan naik tangga Hejan menuju Teras Pante. Bapak dengar tadi di kelas ada selisih paham saat menyusun tugas kelompok, ya?",
+                        choices: null
+                    },
+                    {
+                        speaker: "Sinta (Siswi SMA • Ketua Kelompok)",
+                        role: "Siswi SMA",
+                        icon: "fa-user",
+                        stageChip: "Babak 1 • Klarifikasi di Teras",
+                        technique: "Active Listening & Problem Framing",
+                        sceneAction: "ch1_at_pante",
+                        focusChar: "sinta",
+                        text: "Iya, Pak. Tenggat presentasi kelompok kami makin dekat, tapi Raka terus diam saat kami berdiskusi. Teman-teman jadi mengira Raka tidak peduli.",
+                        choices: null
+                    },
+                    {
+                        speaker: "Raka (Siswa SMA Pindahan)",
+                        role: "Siswa SMA",
+                        icon: "fa-user-graduate",
+                        stageChip: "Babak 1 • Ungkapan Awal Raka",
+                        technique: "Empathic Exploration (Manarima)",
+                        sceneAction: "ch1_at_pante",
+                        focusChar: "raka",
+                        text: "Bukan begitu, Sin... Tiap kali saya mulai bicara, ada teman yang menertawakan logat daerah saya. Akhirnya saya memilih diam supaya tidak makin jadi bahan ejekan.",
+                        choices: [
+                            {
+                                label: "A. Memvalidasi perasaan Raka & mengajak Sinta memahami posisinya tanpa menghakimi (Manarima)",
+                                delta: 10,
+                                reply: "Guru BK (Sang Pamomong): 'Wajar kamu merasa terluka, Ka. Dan terima kasih Sinta sudah mau mendengarkan alasannya. Di Teras Pante ini kita saling menerima tanpa prasangka.'"
+                            },
+                            {
+                                label: "B. Meminta Raka menahan diri saja agar kelompok cepat selesai",
+                                delta: -5,
+                                reply: "Guru BK (Sang Pamomong): 'Jika rasa terlukanya diabaikan begitu saja, Raka akan semakin menutup diri di kelas.'"
+                            }
+                        ]
+                    },
+                    {
+                        speaker: "Guru BK (Sang Pamomong)",
+                        role: "Pamomong",
+                        icon: "fa-user-tie",
+                        stageChip: "Babak 1 • Masuk ke Ruang Los",
+                        technique: "Structuring & Transition",
+                        sceneAction: "ch1_enter_los",
+                        focusChar: "teacher",
+                        text: "Di Huma Betang berlaku 'uras itah, jaton oloh beken hetoh'—semua bersaudara. Mari kita melangkah masuk ke Ruang Los agar kalian bisa duduk sejajar dan berbicara lebih terbuka.",
+                        choices: null
+                    }
+                ]
+            },
+            {
+                id: 1,
+                badge: "Babak 02 • Basarah & Hapahari",
+                location: "Ruang Los (Aula Utama)",
+                shortTitle: "Ruang Los",
+                subtitle: "Duduk Sejajar & Keterbukaan Persaudaraan",
+                mapPos: { left: "35%", top: "48%" },
+                worldPin: new THREE.Vector3(-3.8, 4.3, 0.35),
+                camPos: new THREE.Vector3(-3.8, 6.8, 6.2),
+                camTarget: new THREE.Vector3(-3.8, 2.5, 0.35),
+                loreDesc: "Ruang Los adalah aula panjang terbuka di dalam Huma Betang. Penghuni duduk sejajar di atas tikar purun berlandaskan 'sama keme, sama mangat, sama susah' (senasib sepenanggungan).",
+                loreCounseling: "Menghapus jarak hierarki dan mengajak konseli mencurahkan isi hati secara tulus (Basarah) serta menumbuhkan empati persaudaraan (Hapahari).",
+                steps: [
+                    {
+                        speaker: "Guru BK (Sang Pamomong)",
+                        role: "Pamomong",
+                        icon: "fa-user-tie",
+                        stageChip: "Babak 2 • Duduk di Tikar Purun",
+                        technique: "Egalitarian Setting & Linking",
+                        sceneAction: "ch2_sit_los",
+                        focusChar: "teacher",
+                        text: "Kita sudah duduk sejajar di tikar purun Ruang Los. Di sini tidak ada sekat status—semua dalam semangat Hapahari. Sinta, bagaimana perasaanmu setelah tahu alasan Raka?",
+                        choices: null
+                    },
+                    {
+                        speaker: "Sinta (Siswi SMA • Ketua Kelompok)",
+                        role: "Siswi SMA",
+                        icon: "fa-user",
+                        stageChip: "Babak 2 • Keterbukaan Sinta (Basarah)",
+                        technique: "Self-Disclosure & Apology",
+                        sceneAction: "ch2_sit_los",
+                        focusChar: "sinta",
+                        text: "Saya merasa kurang peka, Pak. Saya terlalu terpaku pada target nilai sampai tidak sadar Raka tertekan. Maafkan saya ya, Ka, sudah membuatmu merasa sendirian.",
+                        choices: null
+                    },
+                    {
+                        speaker: "Raka (Siswa SMA Pindahan)",
+                        role: "Siswa SMA",
+                        icon: "fa-user-graduate",
+                        stageChip: "Babak 2 • Keterbukaan Raka (Basarah)",
+                        technique: "Mutual Empathy & Resource Sharing",
+                        sceneAction: "ch2_sit_los",
+                        focusChar: "raka",
+                        text: "Saya juga minta maaf, Sin, karena diam dan tidak bilang langsung. Padahal di buku catatan saya sudah ada ringkasan materi sejarah lokal untuk bagian presentasi kita.",
+                        choices: [
+                            {
+                                label: "A. Mengapresiasi keterbukaan (Basarah) keduanya & menyatukan ide materi presentasi mereka",
+                                delta: 10,
+                                reply: "Guru BK (Sang Pamomong): 'Nah, begitu rasanya saling terbuka. Saat ego dilepas, jalan keluar justru terbuka bersama.'"
+                            },
+                            {
+                                label: "B. Mengabaikan catatan Raka karena formatnya berbeda dari rencana awal Sinta",
+                                delta: -5,
+                                reply: "Guru BK (Sang Pamomong): 'Menolak masukan Raka berisiko membuat ia kembali merasa tidak dianggap bagian dari tim.'"
+                            }
+                        ]
+                    },
+                    {
+                        speaker: "Guru BK (Sang Pamomong)",
+                        role: "Pamomong",
+                        icon: "fa-user-tie",
+                        stageChip: "Babak 2 • Menuju Pilar Tengah",
+                        technique: "Bridging to Value Clarification",
+                        sceneAction: "ch3_walk_pillar",
+                        focusChar: "teacher",
+                        text: "Langkah yang sangat baik. Sekarang mari kita berdiri dan menuju Pilar Ulin Utama di tengah aula untuk menimbang nilai yang menopang sikap kita.",
+                        choices: null
+                    }
+                ]
+            },
+            {
+                id: 2,
+                badge: "Babak 03 • Manimbang Batang Garing",
+                location: "Pilar Ulin Utama",
+                shortTitle: "Pilar Tengah",
+                subtitle: "Menimbang Keseimbangan Nilai & Martabat",
+                mapPos: { left: "52%", top: "36%" },
+                worldPin: new THREE.Vector3(0, 4.5, 0.2),
+                camPos: new THREE.Vector3(3.6, 5.0, 6.4),
+                camTarget: new THREE.Vector3(0, 2.5, 0.2),
+                loreDesc: "Pilar Ulin Utama menopang bentang bangunan Huma Betang. Dalam simbolisme Batang Garing, ia mengingatkan keseimbangan antara keluhuran nilai di atas dan tanggung jawab nyata di bumi.",
+                loreCounseling: "Membantu peserta didik melakukan klarifikasi nilai (values clarification) agar mampu menimbang sikap bijak di tengah perbedaan.",
+                steps: [
+                    {
+                        speaker: "Guru BK (Sang Pamomong)",
+                        role: "Pamomong",
+                        icon: "fa-user-tie",
+                        stageChip: "Babak 3 • Refleksi di Pilar Ulin",
+                        technique: "Cultural Metaphor & Values Clarification",
+                        sceneAction: "ch3_at_pillar",
+                        focusChar: "teacher",
+                        text: "Pilar ulin ini berdiri kokoh karena menyatu dengan struktur rumah. Seperti Batang Garing, sikap kita pun perlu seimbang: menghargai martabat orang lain sekaligus memikul tanggung jawab sendiri.",
+                        choices: null
+                    },
+                    {
+                        speaker: "Raka (Siswa SMA Pindahan)",
+                        role: "Siswa SMA",
+                        icon: "fa-user-graduate",
+                        stageChip: "Babak 3 • Permintaan Sesi Privat",
+                        technique: "Self-Awareness & Help Seeking",
+                        sceneAction: "ch3_at_pillar",
+                        focusChar: "raka",
+                        text: "Saya paham, Pak. Saya ingin terus memperbaiki diri. Ada satu hal pribadi yang masih membuat saya cemas... bolehkah saya menyampaikannya secara khusus kepada Bapak?",
+                        choices: [
+                            {
+                                label: "A. Menjaga kerahasiaan konseling & mengajak Raka masuk ke Bilik Privat sementara Sinta menata catatan",
+                                delta: 10,
+                                reply: "Guru BK (Sang Pamomong): 'Tentu, Ka. Kerahasiaanmu terjaga. Mari kita masuk ke dalam Bilik Privat agar kamu bisa bercerita dengan tenang.'"
+                            },
+                            {
+                                label: "B. Meminta Raka menceritakannya langsung di depan banyak orang",
+                                delta: -5,
+                                reply: "Guru BK (Sang Pamomong): 'Urusan pribadi yang masih sensitif sebaiknya dihormati batas privasinya agar siswa merasa aman.'"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 3,
+                badge: "Babak 04 • Hapakat Kula & Handep",
+                location: "Bilik Privat & Sudut Handep",
+                shortTitle: "Bilik Privat",
+                subtitle: "Kerahasiaan Konseling & Dukungan Sebaya",
+                mapPos: { left: "69%", top: "48%" },
+                worldPin: new THREE.Vector3(4.5, 4.1, 0.3),
+                camPos: new THREE.Vector3(4.5, 7.6, 5.2),
+                camTarget: new THREE.Vector3(4.5, 2.4, 0.3),
+                loreDesc: "Bilik Privat memberi ruang tenang di dalam bilik bersekat bagi cerita pribadi yang perlu dijaga kerahasiaannya, sebelum kembali bermufakat (Hapakat Kula) dan saling membantu (Handep).",
+                loreCounseling: "Memadukan etika kerahasiaan konseling individual di dalam ruang privat dengan rencana kolaborasi teman sebaya (peer support / Handep).",
+                steps: [
+                    {
+                        speaker: "Raka (Siswa SMA Pindahan)",
+                        role: "Siswa SMA",
+                        icon: "fa-user-graduate",
+                        stageChip: "Babak 4 • Cerita Rahasia di Dalam Bilik",
+                        technique: "Confidentiality & Trust",
+                        sceneAction: "ch4_private_bilik",
+                        focusChar: "raka",
+                        text: "Di dalam Bilik Privat ini saya bisa berterus terang, Pak. Orang tua saya sering berpindah tugas, jadi saya sering khawatir gagal beradaptasi lagi. Tapi saya tetap ingin menyelesaikan tugas ini.",
+                        choices: null
+                    },
+                    {
+                        speaker: "Guru BK (Sang Pamomong)",
+                        role: "Pamomong",
+                        icon: "fa-user-tie",
+                        stageChip: "Babak 4 • Kesepakatan Handep",
+                        technique: "Hapakat Kula & Peer Collaboration (Handep)",
+                        sceneAction: "ch4_handep_circle",
+                        focusChar: "teacher",
+                        text: "Ceritamu aman bersama Bapak. Pengalaman berpindah tempat justru melatih daya adaptasimu. Mari kita susun kesepakatan (Hapakat Kula) bersama Sinta lewat Handep—saling dukung menyiapkan presentasi.",
+                        choices: [
+                            {
+                                label: "A. Menyusun pembagian peran Handep yang jelas dan saling mendukung antara Raka dan Sinta",
+                                delta: 10,
+                                reply: "Guru BK (Sang Pamomong): 'Sepakat! Raka menyiapkan materi sejarah lokal dan berlatih bersama, Sinta menyusun alur slide dan memberi dukungan.'"
+                            },
+                            {
+                                label: "B. Menyerahkan seluruh beban presentasi hanya kepada salah satu siswa",
+                                delta: -5,
+                                reply: "Guru BK (Sang Pamomong): 'Handep berarti saling menopang secara setara, bukan membebani satu pihak saja.'"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 4,
+                badge: "Babak 05 • Belom Bahadat & Isen Mulang",
+                location: "Monumen Batang Garing & Tiang Pantar",
+                shortTitle: "Batang Garing",
+                subtitle: "Komitmen Hidup Beradat & Pantang Menyerah",
+                mapPos: { left: "86%", top: "61%" },
+                worldPin: new THREE.Vector3(5.8, 4.4, 8.2),
+                camPos: new THREE.Vector3(1.4, 4.3, 13.6),
+                camTarget: new THREE.Vector3(5.4, 2.2, 8.4),
+                loreDesc: "Monumen Batang Garing (guci Belanga, cabang harmoni, dan Burung Tingang) serta Tiang Pantar di pelataran menjadi simbol hidup rukun, beradat (Belom Bahadat), dan pantang surut (Isen Mulang).",
+                loreCounseling: "Tahap terminasi dan penguatan karakter berkelanjutan agar nilai budaya terinternalisasi dalam perilaku nyata di sekolah.",
+                steps: [
+                    {
+                        speaker: "Guru BK (Sang Pamomong)",
+                        role: "Pamomong",
+                        icon: "fa-user-tie",
+                        stageChip: "Babak 5 • Pelataran Batang Garing",
+                        technique: "Termination & Cultural Anchoring",
+                        sceneAction: "ch5_walk_monument",
+                        focusChar: "teacher",
+                        text: "Di hadapan Monumen Batang Garing dan Tiang Pantar ini, kita menutup sesi dengan semangat Belom Bahadat dan Isen Mulang—hidup beradat serta pantang menyerah dalam kebaikan.",
+                        choices: null
+                    },
+                    {
+                        speaker: "Sinta (Siswi SMA • Ketua Kelompok)",
+                        role: "Siswi SMA",
+                        icon: "fa-user",
+                        stageChip: "Babak 5 • Komitmen Bersama",
+                        technique: "Commitment Statement",
+                        sceneAction: "ch5_at_monument",
+                        focusChar: "sinta",
+                        text: "Kami berkomitmen menjaga sikap saling menghargai di kelas, Pak. Raka akan membawakan bagian sejarah lokal, dan kami akan menyelesaikannya bersama dengan penuh tanggung jawab.",
+                        choices: [
+                            {
+                                label: "A. Menguatkan komitmen Belom Bahadat & Isen Mulang serta menyelesaikan simulasi",
+                                delta: 10,
+                                reply: "Guru BK (Sang Pamomong): 'Selamat, Raka dan Sinta. Semoga nilai Hapahari dan Belom Bahadat terus tumbuh dalam keseharian kalian.'"
+                            },
+                            {
+                                label: "B. Menutup pertemuan tanpa menegaskan langkah tindak lanjut di kelas",
+                                delta: -5,
+                                reply: "Guru BK (Sang Pamomong): 'Penegasan langkah tindak lanjut membantu siswa tetap konsisten setelah keluar dari ruang konseling.'"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        // =====================================================================
+        // 3. THREE.JS 3D SCENE, HUMA BETANG ARCHITECTURE & CHARACTERS
+        // =====================================================================
+        let scene, camera, renderer, controls;
+        let sunLight, hemiLight;
+        let roofGroup, humaGroup;
+        let locationPins = [];
+        let targetCamPos = null;
+        let targetCamTarget = null;
+        let isDraggingCamera = false;
+
+        function faceToward(mesh, tx, tz) {
+            if (!mesh) return;
+            mesh.rotation.y = Math.atan2(tx - mesh.position.x, tz - mesh.position.z);
+        }
+
+        function createUlinWoodTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#4a2915';
+            ctx.fillRect(0, 0, 256, 256);
+            for (let y = 0; y < 256; y += 3) {
+                const shade = Math.sin(y * 0.14) * 14 + (Math.random() * 10 - 5);
+                ctx.fillStyle = `rgb(${Math.max(25, Math.min(130, 74 + shade))}, ${Math.max(15, Math.min(80, 41 + shade * 0.6))}, ${Math.max(8, Math.min(50, 21 + shade * 0.35))})`;
+                ctx.fillRect(0, y, 256, 2);
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(3, 3);
+            return tex;
+        }
+
+        function createSirapRoofTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#2d180c';
+            ctx.fillRect(0, 0, 256, 256);
+            const tileH = 16;
+            const tileW = 32;
+            for (let row = 0; row < 256 / tileH; row++) {
+                const offset = (row % 2) * (tileW / 2);
+                for (let col = -1; col < 256 / tileW + 1; col++) {
+                    const x = col * tileW + offset;
+                    const y = row * tileH;
+                    const v = (Math.random() * 14) - 7;
+                    ctx.fillStyle = `rgb(${54 + v}, ${29 + v * 0.6}, ${14 + v * 0.3})`;
+                    ctx.fillRect(x + 1, y + 1, tileW - 2, tileH - 2);
+                    ctx.strokeStyle = '#140a05';
+                    ctx.strokeRect(x, y, tileW, tileH);
+                }
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(6, 4);
+            return tex;
+        }
+
+        function createDayakBatikTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#5c1612';
+            ctx.fillRect(0, 0, 256, 256);
+            ctx.strokeStyle = '#e5a93c';
+            ctx.lineWidth = 2.5;
+            for (let x = 32; x < 256; x += 64) {
+                for (let y = 32; y < 256; y += 64) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, y - 22);
+                    ctx.quadraticCurveTo(x + 20, y, x, y + 22);
+                    ctx.quadraticCurveTo(x - 20, y, x, y - 22);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, 6, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(2, 1);
+            return tex;
+        }
+
+        function createPurunMatTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#9c7844';
+            ctx.fillRect(0, 0, 256, 256);
+            ctx.strokeStyle = '#6e4f25';
+            ctx.lineWidth = 1.5;
+            for (let i = 0; i < 256; i += 8) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i + 40, 256);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(256, i + 25);
+                ctx.stroke();
+            }
+            ctx.strokeStyle = '#7d1d18';
+            ctx.lineWidth = 6;
+            ctx.strokeRect(12, 12, 232, 232);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createCharacter({ x, y, z, rotY = 0, roleType = 'student-male', seated = false }) {
+            const charGroup = new THREE.Group();
+            charGroup.position.set(x, y, z);
+            charGroup.rotation.y = rotY;
+
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xc98a5b, roughness: 0.65 });
+            const hairMat = new THREE.MeshStandardMaterial({ color: 0x1a120e, roughness: 0.75 });
+            const whiteShirtMat = new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.55 });
+            const greyUniformMat = new THREE.MeshStandardMaterial({ color: 0x565c64, roughness: 0.65 });
+            const batikCharMat = new THREE.MeshStandardMaterial({ map: createDayakBatikTexture(), roughness: 0.6 });
+            const shoeMat = new THREE.MeshStandardMaterial({ color: 0x171412, roughness: 0.45 });
+            const charGoldMat = new THREE.MeshStandardMaterial({ color: 0xf3c46b, metalness: 0.6, roughness: 0.3 });
+
+            const isTeacher = roleType === 'teacher';
+            const isFemaleStudent = roleType === 'student-female';
+
+            const leftLeg = new THREE.Group();
+            leftLeg.position.set(-0.1, 0.56, 0);
+            const rightLeg = new THREE.Group();
+            rightLeg.position.set(0.1, 0.56, 0);
+
+            if (isFemaleStudent) {
+                const skirtMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.42, 14), greyUniformMat);
+                skirtMesh.position.set(0, 0.42, 0);
+                skirtMesh.castShadow = true;
+                charGroup.add(skirtMesh);
+
+                const lLegMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.045, 0.54, 10), skinMat);
+                lLegMesh.position.set(0, -0.27, 0);
+                lLegMesh.castShadow = true;
+                leftLeg.add(lLegMesh);
+
+                const rLegMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.045, 0.54, 10), skinMat);
+                rLegMesh.position.set(0, -0.27, 0);
+                rLegMesh.castShadow = true;
+                rightLeg.add(rLegMesh);
+            } else {
+                const legColor = isTeacher ? new THREE.MeshStandardMaterial({ color: 0x241912, roughness: 0.65 }) : greyUniformMat;
+                const lLegMesh = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.56, 0.14), legColor);
+                lLegMesh.position.set(0, -0.28, 0);
+                lLegMesh.castShadow = true;
+                leftLeg.add(lLegMesh);
+
+                const rLegMesh = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.56, 0.14), legColor);
+                rLegMesh.position.set(0, -0.28, 0);
+                rLegMesh.castShadow = true;
+                rightLeg.add(rLegMesh);
+            }
+
+            const lShoe = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.22), shoeMat);
+            lShoe.position.set(0, -0.56, 0.04);
+            lShoe.castShadow = true;
+            leftLeg.add(lShoe);
+
+            const rShoe = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.22), shoeMat);
+            rShoe.position.set(0, -0.56, 0.04);
+            rShoe.castShadow = true;
+            rightLeg.add(rShoe);
+
+            charGroup.add(leftLeg);
+            charGroup.add(rightLeg);
+
+            const torsoMat = isTeacher ? batikCharMat : whiteShirtMat;
+            const torsoGeo = isFemaleStudent
+                ? new THREE.CylinderGeometry(0.14, 0.18, 0.52, 14)
+                : new THREE.BoxGeometry(0.36, 0.54, 0.2);
+            const torso = new THREE.Mesh(torsoGeo, torsoMat);
+            torso.position.set(0, 0.83, 0);
+            torso.castShadow = true;
+            charGroup.add(torso);
+
+            if (!isTeacher) {
+                const tie = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.26, 0.02), greyUniformMat);
+                tie.position.set(0, 0.94, 0.105);
+                charGroup.add(tie);
+            } else {
+                const lanyard = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.28, 0.02), charGoldMat);
+                lanyard.position.set(0, 0.92, 0.11);
+                charGroup.add(lanyard);
+            }
+
+            const leftArm = new THREE.Group();
+            leftArm.position.set(-0.23, 1.05, 0);
+            const lArmMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.042, 0.46, 10), isTeacher ? batikCharMat : whiteShirtMat);
+            lArmMesh.position.set(0, -0.2, 0);
+            lArmMesh.castShadow = true;
+            leftArm.add(lArmMesh);
+
+            const rightArm = new THREE.Group();
+            rightArm.position.set(0.23, 1.05, 0);
+            const rArmMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.042, 0.46, 10), isTeacher ? batikCharMat : whiteShirtMat);
+            rArmMesh.position.set(0, -0.2, 0);
+            rArmMesh.castShadow = true;
+            rightArm.add(rArmMesh);
+
+            charGroup.add(leftArm);
+            charGroup.add(rightArm);
+
+            const headGroup = new THREE.Group();
+            headGroup.position.set(0, 1.26, 0);
+            const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.155, 16, 16), skinMat);
+            headMesh.castShadow = true;
+            headGroup.add(headMesh);
+
+            const eyeMat = new THREE.MeshStandardMaterial({ color: 0x1a120e, roughness: 0.3 });
+            const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), eyeMat);
+            eyeL.position.set(-0.052, 0.015, 0.145);
+            const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), eyeMat);
+            eyeR.position.set(0.052, 0.015, 0.145);
+            headGroup.add(eyeL, eyeR);
+
+            if (isTeacher) {
+                const lawung = new THREE.Mesh(new THREE.CylinderGeometry(0.165, 0.172, 0.09, 14), batikCharMat);
+                lawung.position.set(0, 0.11, 0);
+                lawung.rotation.z = -0.08;
+                headGroup.add(lawung);
+
+                const feather = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.032, 0.28, 8),
+                    new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.4 })
+                );
+                feather.position.set(-0.14, 0.22, -0.04);
+                feather.rotation.z = 0.42;
+                headGroup.add(feather);
+            } else if (isFemaleStudent) {
+                const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.163, 14, 14), hairMat);
+                hairCap.position.set(0, 0.025, -0.01);
+                hairCap.scale.set(1, 1.04, 1.05);
+                headGroup.add(hairCap);
+
+                const ponytail = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.025, 0.34, 10), hairMat);
+                ponytail.position.set(0, -0.06, -0.17);
+                ponytail.rotation.x = 0.25;
+                headGroup.add(ponytail);
+            } else {
+                const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.162, 14, 14, 0, Math.PI * 2, 0, Math.PI * 0.58), hairMat);
+                hairCap.position.set(0, 0.02, 0);
+                headGroup.add(hairCap);
+            }
+
+            charGroup.add(headGroup);
+
+            charGroup.userData = {
+                leftLeg,
+                rightLeg,
+                leftArm,
+                rightArm,
+                headGroup,
+                seated,
+                isWalking: false,
+                phase: Math.random() * Math.PI * 2
+            };
+
+            if (seated) {
+                leftLeg.rotation.x = -1.25;
+                rightLeg.rotation.x = -1.25;
+            }
+
+            humaGroup.add(charGroup);
+            return charGroup;
+        }
+
+        function buildEnvironmentAndHumaBetang() {
+            const ulinTex = createUlinWoodTexture();
+            const sirapTex = createSirapRoofTexture();
+            const batikTex = createDayakBatikTexture();
+            const purunTex = createPurunMatTexture();
+
+            const ulinMat = new THREE.MeshStandardMaterial({ map: ulinTex, roughness: 0.72, metalness: 0.05 });
+            const darkWoodMat = new THREE.MeshStandardMaterial({ color: 0x26140a, roughness: 0.8 });
+            const sirapMat = new THREE.MeshStandardMaterial({ map: sirapTex, roughness: 0.82 });
+            const batikMat = new THREE.MeshStandardMaterial({ map: batikTex, roughness: 0.65 });
+            const goldMat = new THREE.MeshStandardMaterial({ color: 0xd99b26, metalness: 0.65, roughness: 0.3 });
+            const crimsonMat = new THREE.MeshStandardMaterial({ color: 0x9e2a22, roughness: 0.6 });
+            const purunMat = new THREE.MeshStandardMaterial({ map: purunTex, roughness: 0.88 });
+
+            const ground = new THREE.Mesh(
+                new THREE.CircleGeometry(48, 64),
+                new THREE.MeshStandardMaterial({ color: 0x233b22, roughness: 0.95 })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            const yard = new THREE.Mesh(
+                new THREE.PlaneGeometry(18, 20),
+                new THREE.MeshStandardMaterial({ color: 0x4a3928, roughness: 0.92 })
+            );
+            yard.rotation.x = -Math.PI / 2;
+            yard.position.set(0, 0.02, 2);
+            yard.receiveShadow = true;
+            scene.add(yard);
+
+            const river = new THREE.Mesh(
+                new THREE.RingGeometry(36, 48, 64),
+                new THREE.MeshStandardMaterial({ color: 0x163242, roughness: 0.35, metalness: 0.25 })
+            );
+            river.rotation.x = -Math.PI / 2;
+            river.position.y = -0.05;
+            scene.add(river);
+
+            humaGroup = new THREE.Group();
+            scene.add(humaGroup);
+
+            const stiltHeight = 2.0;
+            const floorY = stiltHeight + 0.22;
+            const houseW = 13.0;
+            const houseD = 7.4;
+
+            const stiltColsX = [-5.7, -2.85, 2.85, 5.7];
+            const stiltRowsZ = [-3.0, 0.0, 3.0];
+            for (let xi = 0; xi < stiltColsX.length; xi++) {
+                for (let zi = 0; zi < stiltRowsZ.length; zi++) {
+                    const ix = stiltColsX[xi];
+                    const iz = stiltRowsZ[zi];
+                    const stilt = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, stiltHeight, 12), ulinMat);
+                    stilt.position.set(ix, stiltHeight / 2, iz);
+                    stilt.castShadow = true;
+                    stilt.receiveShadow = true;
+                    humaGroup.add(stilt);
+
+                    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.38, 0.24, 12), darkWoodMat);
+                    base.position.set(ix, 0.12, iz);
+                    base.receiveShadow = true;
+                    humaGroup.add(base);
+                }
+            }
+
+            const floorMesh = new THREE.Mesh(new THREE.BoxGeometry(houseW, 0.24, houseD), ulinMat);
+            floorMesh.position.set(0, stiltHeight + 0.12, 0);
+            floorMesh.castShadow = true;
+            floorMesh.receiveShadow = true;
+            humaGroup.add(floorMesh);
+
+            const panteW = 7.6;
+            const panteD = 2.4;
+            const panteCenterZ = houseD / 2 + panteD / 2;
+            const panteMesh = new THREE.Mesh(new THREE.BoxGeometry(panteW, 0.22, panteD), ulinMat);
+            panteMesh.position.set(0, stiltHeight + 0.11, panteCenterZ);
+            panteMesh.castShadow = true;
+            panteMesh.receiveShadow = true;
+            humaGroup.add(panteMesh);
+
+            [-3.4, 0, 3.4].forEach(px => {
+                const panteStilt = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, stiltHeight, 10), ulinMat);
+                panteStilt.position.set(px, stiltHeight / 2, houseD / 2 + panteD - 0.35);
+                panteStilt.castShadow = true;
+                humaGroup.add(panteStilt);
+            });
+
+            const railTopY = floorY + 0.92;
+            const stairHalfW = 0.92;
+            const sideRailLen = (panteW / 2) - stairHalfW - 0.15;
+
+            [-1, 1].forEach(side => {
+                const outerPostX = side * (panteW / 2 - 0.14);
+                const innerPostX = side * (stairHalfW + 0.14);
+                const frontZ = houseD / 2 + panteD - 0.14;
+                const backZ = houseD / 2 + 0.14;
+
+                [frontZ, backZ].forEach(pz => {
+                    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.96, 10), darkWoodMat);
+                    post.position.set(outerPostX, floorY + 0.48, pz);
+                    post.castShadow = true;
+                    humaGroup.add(post);
+
+                    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.085, 10, 10), goldMat);
+                    cap.position.set(outerPostX, floorY + 0.98, pz);
+                    humaGroup.add(cap);
+                });
+
+                const stairEdgePost = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.96, 10), darkWoodMat);
+                stairEdgePost.position.set(innerPostX, floorY + 0.48, frontZ);
+                stairEdgePost.castShadow = true;
+                humaGroup.add(stairEdgePost);
+
+                const sideRail = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.08, panteD - 0.24), darkWoodMat);
+                sideRail.position.set(outerPostX, railTopY, panteCenterZ);
+                sideRail.castShadow = true;
+                humaGroup.add(sideRail);
+
+                const sideMidRail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, panteD - 0.28), goldMat);
+                sideMidRail.position.set(outerPostX, floorY + 0.48, panteCenterZ);
+                humaGroup.add(sideMidRail);
+
+                const frontRail = new THREE.Mesh(new THREE.BoxGeometry(sideRailLen, 0.08, 0.09), darkWoodMat);
+                frontRail.position.set(side * (stairHalfW + 0.14 + sideRailLen / 2), railTopY, frontZ);
+                frontRail.castShadow = true;
+                humaGroup.add(frontRail);
+
+                const frontMidRail = new THREE.Mesh(new THREE.BoxGeometry(sideRailLen, 0.05, 0.06), goldMat);
+                frontMidRail.position.set(side * (stairHalfW + 0.14 + sideRailLen / 2), floorY + 0.48, frontZ);
+                humaGroup.add(frontMidRail);
+            });
+
+            // Tangga Hejan
+            const stepCount = 7;
+            const stairWidth = 1.66;
+            const stepStartZ = houseD / 2 + panteD + 0.22;
+            const stepEndZ = stepStartZ + 2.80;
+            const stepRise = floorY / stepCount;
+
+            for (let s = 0; s < stepCount; s++) {
+                const topY = stepRise * (s + 1);
+                const t = s / (stepCount - 1);
+                const sz = stepEndZ - (stepEndZ - stepStartZ) * t;
+                const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(stairWidth, 0.14, 0.46), ulinMat);
+                stepMesh.position.set(0, topY - 0.07, sz);
+                stepMesh.castShadow = true;
+                stepMesh.receiveShadow = true;
+                humaGroup.add(stepMesh);
+            }
+
+            const riseY = floorY;
+            const runZ = stepEndZ - stepStartZ;
+            const stringerLen = Math.hypot(riseY, runZ) + 0.12;
+            const stairSlopeAngle = Math.atan2(riseY, runZ);
+            const midY = riseY * 0.5;
+            const midZ = (stepStartZ + stepEndZ) * 0.5;
+
+            [-stairWidth / 2 - 0.06, stairWidth / 2 + 0.06].forEach(sx => {
+                const stringer = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.16, stringerLen), darkWoodMat);
+                stringer.position.set(sx, midY - 0.12, midZ);
+                stringer.rotation.x = stairSlopeAngle;
+                stringer.castShadow = true;
+                humaGroup.add(stringer);
+
+                const railHeight = 0.86;
+                const bottomPostH = railHeight + 0.06;
+                const bottomPost = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.055, bottomPostH, 10), darkWoodMat);
+                bottomPost.position.set(sx, bottomPostH * 0.5, stepEndZ + 0.12);
+                bottomPost.castShadow = true;
+                humaGroup.add(bottomPost);
+
+                const bottomCap = new THREE.Mesh(new THREE.SphereGeometry(0.065, 10, 10), goldMat);
+                bottomCap.position.set(sx, bottomPostH + 0.03, stepEndZ + 0.12);
+                humaGroup.add(bottomCap);
+
+                const topPostH = railHeight + 0.06;
+                const topPost = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.055, topPostH, 10), darkWoodMat);
+                topPost.position.set(sx, floorY + topPostH * 0.5, stepStartZ - 0.12);
+                topPost.castShadow = true;
+                humaGroup.add(topPost);
+
+                const topCap = new THREE.Mesh(new THREE.SphereGeometry(0.065, 10, 10), goldMat);
+                topCap.position.set(sx, floorY + topPostH + 0.03, stepStartZ - 0.12);
+                humaGroup.add(topCap);
+
+                const midPostBaseY = midY - 0.06;
+                const midPostTopY = midY + railHeight;
+                const midPostH = midPostTopY - midPostBaseY;
+                const midPost = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.046, midPostH, 10), darkWoodMat);
+                midPost.position.set(sx, midPostBaseY + midPostH * 0.5, midZ);
+                midPost.castShadow = true;
+                humaGroup.add(midPost);
+
+                const topRailLen = Math.hypot(riseY, (stepEndZ + 0.12) - (stepStartZ - 0.12));
+                const handrail = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.075, topRailLen), goldMat);
+                handrail.position.set(sx, midY + railHeight, midZ);
+                handrail.rotation.x = stairSlopeAngle;
+                handrail.castShadow = true;
+                humaGroup.add(handrail);
+            });
+
+            // Dinding, Pintu Utama & Pilar Tengah
+            const wallH = 2.55;
+            const wallY = floorY + wallH / 2;
+            const doorCenterZ = houseD / 2 - 0.11;
+            const doorOpeningW = 1.9;
+            const doorOpeningH = 1.98;
+            const sideWallW = (houseW - doorOpeningW) / 2;
+
+            const backWall = new THREE.Mesh(new THREE.BoxGeometry(houseW, wallH, 0.22), ulinMat);
+            backWall.position.set(0, wallY, -houseD / 2 + 0.11);
+            backWall.castShadow = true;
+            backWall.receiveShadow = true;
+            humaGroup.add(backWall);
+
+            const frieze = new THREE.Mesh(new THREE.BoxGeometry(houseW - 0.4, 0.42, 0.26), batikMat);
+            frieze.position.set(0, floorY + wallH - 0.35, -houseD / 2 + 0.14);
+            humaGroup.add(frieze);
+
+            const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.22, wallH, houseD), ulinMat);
+            leftWall.position.set(-houseW / 2 + 0.11, wallY, 0);
+            leftWall.castShadow = true;
+            humaGroup.add(leftWall);
+
+            const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.22, wallH, houseD), ulinMat);
+            rightWall.position.set(houseW / 2 - 0.11, wallY, 0);
+            rightWall.castShadow = true;
+            humaGroup.add(rightWall);
+
+            const frontLeftWall = new THREE.Mesh(new THREE.BoxGeometry(sideWallW, wallH, 0.22), ulinMat);
+            frontLeftWall.position.set(-houseW / 2 + sideWallW / 2, wallY, doorCenterZ);
+            frontLeftWall.castShadow = true;
+            humaGroup.add(frontLeftWall);
+
+            const frontRightWall = new THREE.Mesh(new THREE.BoxGeometry(sideWallW, wallH, 0.22), ulinMat);
+            frontRightWall.position.set(houseW / 2 - sideWallW / 2, wallY, doorCenterZ);
+            frontRightWall.castShadow = true;
+            humaGroup.add(frontRightWall);
+
+            const headerH = Math.max(0.25, wallH - doorOpeningH);
+            const frontHeaderWall = new THREE.Mesh(new THREE.BoxGeometry(doorOpeningW + 0.24, headerH, 0.24), ulinMat);
+            frontHeaderWall.position.set(0, floorY + doorOpeningH + headerH / 2, doorCenterZ);
+            frontHeaderWall.castShadow = true;
+            humaGroup.add(frontHeaderWall);
+
+            [-doorOpeningW / 2 - 0.06, doorOpeningW / 2 + 0.06].forEach(jx => {
+                const jamb = new THREE.Mesh(new THREE.BoxGeometry(0.14, doorOpeningH, 0.32), darkWoodMat);
+                jamb.position.set(jx, floorY + doorOpeningH / 2, doorCenterZ);
+                jamb.castShadow = true;
+                humaGroup.add(jamb);
+            });
+
+            const sill = new THREE.Mesh(new THREE.BoxGeometry(doorOpeningW + 0.28, 0.08, 0.34), darkWoodMat);
+            sill.position.set(0, floorY + 0.04, doorCenterZ);
+            // Engsel daun pintu ganda berada di sisi kiri (-0.99) dan kanan (+0.99) kusen;
+            // di Three.js, rotasi +Y pada engsel kiri membuka daun pintu ke arah -Z (ke dalam ruangan),
+            // dan rotasi -Y pada engsel kanan juga membuka daun pintu ke arah -Z (ke dalam ruangan).
+            const leafW = 0.82;
+            const leafH = doorOpeningH - 0.06;
+            const leafCenterY = floorY + leafH / 2 + 0.05;
+
+            const leftHinge = new THREE.Group();
+            leftHinge.position.set(-doorOpeningW / 2 - 0.04, leafCenterY, doorCenterZ - 0.08);
+            leftHinge.rotation.y = 1.28;
+            const leftLeafMesh = new THREE.Mesh(new THREE.BoxGeometry(leafW, leafH, 0.08), batikMat);
+            leftLeafMesh.position.set(leafW / 2, 0, 0);
+            leftLeafMesh.castShadow = true;
+            const leftTrim = new THREE.Mesh(new THREE.BoxGeometry(leafW - 0.12, 0.06, 0.1), goldMat);
+            leftTrim.position.set(leafW / 2, leafH / 2 - 0.28, 0);
+            leftHinge.add(leftLeafMesh, leftTrim);
+            humaGroup.add(leftHinge);
+
+            const rightHinge = new THREE.Group();
+            rightHinge.position.set(doorOpeningW / 2 + 0.04, leafCenterY, doorCenterZ - 0.08);
+            rightHinge.rotation.y = -1.28;
+            const rightLeafMesh = new THREE.Mesh(new THREE.BoxGeometry(leafW, leafH, 0.08), batikMat);
+            rightLeafMesh.position.set(-leafW / 2, 0, 0);
+            rightLeafMesh.castShadow = true;
+            const rightTrim = new THREE.Mesh(new THREE.BoxGeometry(leafW - 0.12, 0.06, 0.1), goldMat);
+            rightTrim.position.set(-leafW / 2, leafH / 2 - 0.28, 0);
+            rightHinge.add(rightLeafMesh, rightTrim);
+            humaGroup.add(rightHinge);
+
+            const centerPillar = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, wallH + 0.4, 16), darkWoodMat);
+            centerPillar.position.set(0, floorY + (wallH + 0.4) / 2, 0.2);
+            centerPillar.castShadow = true;
+            humaGroup.add(centerPillar);
+
+            const pillarRing = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.045, 10, 24), goldMat);
+            pillarRing.rotation.x = Math.PI / 2;
+            pillarRing.position.set(0, floorY + 1.45, 0.2);
+            humaGroup.add(pillarRing);
+
+            // Interior: Tikar Purun (berupa BoxGeometry tipis agar tidak z-fighting/terpotong lantai), Bantal, Gong, Tungku & Bilik Privat
+            const purunMatMesh = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.025, 3.2), purunMat);
+            purunMatMesh.position.set(-3.8, floorY + 0.014, 0.35);
+            purunMatMesh.receiveShadow = true;
+            humaGroup.add(purunMatMesh);
+
+            const cushionMat = new THREE.MeshStandardMaterial({ color: 0x7d1d18, roughness: 0.75 });
+            const cushionCoords = [
+                [-3.8, -0.55], [-3.8, 1.25],
+                [-4.75, 0.35], [-2.85, 0.35],
+                [-4.45, -0.25], [-3.15, -0.25],
+                [-4.45, 0.95], [-3.15, 0.95]
+            ];
+            cushionCoords.forEach(([cx, cz]) => {
+                const cMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.3, 0.1, 14), cushionMat);
+                cMesh.position.set(cx, floorY + 0.075, cz);
+                cMesh.castShadow = true;
+                cMesh.receiveShadow = true;
+                humaGroup.add(cMesh);
+            });
+
+            const gongMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.12, 24), goldMat);
+            gongMesh.rotation.x = Math.PI / 2;
+            gongMesh.position.set(-5.6, floorY + 1.15, -2.9);
+            gongMesh.castShadow = true;
+            humaGroup.add(gongMesh);
+
+            const katambung = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.95, 14), darkWoodMat);
+            katambung.position.set(-4.7, floorY + 0.48, -2.9);
+            katambung.castShadow = true;
+            humaGroup.add(katambung);
+
+            const hearthBase = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.32, 1.3), new THREE.MeshStandardMaterial({ color: 0x4a4642, roughness: 0.9 }));
+            hearthBase.position.set(-2.2, floorY + 0.16, -2.5);
+            hearthBase.receiveShadow = true;
+            humaGroup.add(hearthBase);
+
+            const potMesh = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 14), new THREE.MeshStandardMaterial({ color: 0x2b2623, roughness: 0.7 }));
+            potMesh.position.set(-2.2, floorY + 0.52, -2.5);
+            potMesh.castShadow = true;
+            humaGroup.add(potMesh);
+
+            // Bilik Privat (ruang dalam: x = 3.3..5.9, z = -0.8..1.4)
+            const bilikWallBack = new THREE.Mesh(new THREE.BoxGeometry(2.6, wallH - 0.15, 0.16), ulinMat);
+            bilikWallBack.position.set(4.6, floorY + (wallH - 0.15) / 2, -0.8);
+            bilikWallBack.castShadow = true;
+            humaGroup.add(bilikWallBack);
+
+            const bilikWallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.16, wallH - 0.15, 2.2), ulinMat);
+            bilikWallLeft.position.set(3.3, floorY + (wallH - 0.15) / 2, 0.3);
+            bilikWallLeft.castShadow = true;
+            humaGroup.add(bilikWallLeft);
+
+            const bilikWallFrontLeft = new THREE.Mesh(new THREE.BoxGeometry(0.75, wallH - 0.15, 0.16), ulinMat);
+            bilikWallFrontLeft.position.set(3.67, floorY + (wallH - 0.15) / 2, 1.4);
+            bilikWallFrontLeft.castShadow = true;
+            humaGroup.add(bilikWallFrontLeft);
+
+            const bilikWallFrontRight = new THREE.Mesh(new THREE.BoxGeometry(0.75, wallH - 0.15, 0.16), ulinMat);
+            bilikWallFrontRight.position.set(5.52, floorY + (wallH - 0.15) / 2, 1.4);
+            bilikWallFrontRight.castShadow = true;
+            humaGroup.add(bilikWallFrontRight);
+
+            const bilikDoor = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.95, 0.08), batikMat);
+            bilikDoor.position.set(4.15, floorY + 0.975, 1.05);
+            bilikDoor.rotation.y = 1.15;
+            bilikDoor.castShadow = true;
+            humaGroup.add(bilikDoor);
+
+            // Tikar purun kecil di dalam Bilik Privat
+            // Tikar purun kecil di dalam Bilik Privat (dinaikkan sedikit di atas lantai agar tidak z-fighting)
+            const bilikMat = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.025, 1.8), purunMat);
+            bilikMat.position.set(4.65, floorY + 0.014, 0.3);
+            bilikMat.receiveShadow = true;
+            humaGroup.add(bilikMat);
+
+            // Atap sirap & pelana
+            roofGroup = new THREE.Group();
+            const roofBaseY = floorY + wallH;
+            const roofHeight = 2.35;
+            const halfSpanZ = (houseD + 1.2) / 2;
+            const roofLengthX = houseW + 1.1;
+            const slopeHypotenuse = Math.hypot(halfSpanZ, roofHeight) + 0.25;
+            const roofPitchAngle = Math.atan2(roofHeight, halfSpanZ);
+
+            const frontSlope = new THREE.Mesh(new THREE.BoxGeometry(roofLengthX, 0.18, slopeHypotenuse), sirapMat);
+            frontSlope.position.set(0, roofBaseY + roofHeight / 2, halfSpanZ / 2);
+            frontSlope.rotation.x = roofPitchAngle;
+            frontSlope.castShadow = true;
+            frontSlope.receiveShadow = true;
+            roofGroup.add(frontSlope);
+
+            const backSlope = new THREE.Mesh(new THREE.BoxGeometry(roofLengthX, 0.18, slopeHypotenuse), sirapMat);
+            backSlope.position.set(0, roofBaseY + roofHeight / 2, -halfSpanZ / 2);
+            backSlope.rotation.x = -roofPitchAngle;
+            backSlope.castShadow = true;
+            backSlope.receiveShadow = true;
+            roofGroup.add(backSlope);
+
+            const ridgeBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, roofLengthX + 0.5, 12), darkWoodMat);
+            ridgeBeam.rotation.z = Math.PI / 2;
+            ridgeBeam.position.set(0, roofBaseY + roofHeight + 0.04, 0);
+            ridgeBeam.castShadow = true;
+            roofGroup.add(ridgeBeam);
+
+            const gableShape = new THREE.Shape();
+            gableShape.moveTo(-halfSpanZ + 0.55, 0);
+            gableShape.lineTo(halfSpanZ - 0.55, 0);
+            gableShape.lineTo(0, roofHeight - 0.04);
+            gableShape.closePath();
+
+            const gableGeo = new THREE.ExtrudeGeometry(gableShape, { depth: 0.2, bevelEnabled: false });
+            gableGeo.rotateY(Math.PI / 2);
+
+            const leftGable = new THREE.Mesh(gableGeo, ulinMat);
+            leftGable.position.set(-houseW / 2 + 0.01, roofBaseY, 0);
+            leftGable.castShadow = true;
+            roofGroup.add(leftGable);
+
+            const rightGable = new THREE.Mesh(gableGeo, ulinMat);
+            rightGable.position.set(houseW / 2 - 0.21, roofBaseY, 0);
+            rightGable.castShadow = true;
+            roofGroup.add(rightGable);
+
+            [-1, 1].forEach(side => {
+                const horn = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.45, 8), crimsonMat);
+                horn.position.set(side * (roofLengthX / 2 + 0.18), roofBaseY + roofHeight + 0.32, 0);
+                horn.rotation.z = -side * 0.65;
+                horn.castShadow = true;
+                roofGroup.add(horn);
+
+                const hornTip = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), goldMat);
+                hornTip.position.set(side * (roofLengthX / 2 + 0.72), roofBaseY + roofHeight + 0.72, 0);
+                roofGroup.add(hornTip);
+            });
+
+            humaGroup.add(roofGroup);
+
+            // Monumen Batang Garing & Tiang Pantar
+            const batangGaringGroup = new THREE.Group();
+            batangGaringGroup.position.set(5.8, 0, 8.2);
+            batangGaringGroup.rotation.y = -0.35;
+
+            const bgPedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.92, 0.24, 16), darkWoodMat);
+            bgPedestal.position.y = 0.12;
+            bgPedestal.receiveShadow = true;
+            batangGaringGroup.add(bgPedestal);
+
+            const belangaMesh = new THREE.Mesh(new THREE.SphereGeometry(0.46, 18, 16), batikMat);
+            belangaMesh.scale.set(1.05, 0.92, 1.05);
+            belangaMesh.position.y = 0.62;
+            belangaMesh.castShadow = true;
+            batangGaringGroup.add(belangaMesh);
+
+            const belangaRim = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.24, 0.16, 16), goldMat);
+            belangaRim.position.y = 1.02;
+            batangGaringGroup.add(belangaRim);
+
+            const bgTrunk = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.16, 2.35, 12), ulinMat);
+            bgTrunk.position.y = 2.18;
+            bgTrunk.castShadow = true;
+            batangGaringGroup.add(bgTrunk);
+
+            const lunjuTip = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.36, 4), goldMat);
+            lunjuTip.position.y = 1.48;
+            batangGaringGroup.add(lunjuTip);
+
+            const branchLevels = [1.95, 2.55, 3.05];
+            for (let i = 0; i < branchLevels.length; i++) {
+                const by = branchLevels[i];
+                const branchSpan = 1.32 - i * 0.22;
+                const angleZ = 0.68;
+                const dirs = [-1, 1];
+                for (let d = 0; d < dirs.length; d++) {
+                    const dir = dirs[d];
+                    const branchPivot = new THREE.Group();
+                    branchPivot.position.set(0, by, 0);
+                    branchPivot.rotation.z = -dir * angleZ;
+
+                    const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.065, branchSpan, 10), darkWoodMat);
+                    branch.position.y = branchSpan * 0.5;
+                    branch.castShadow = true;
+                    branchPivot.add(branch);
+
+                    const leafTip = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.24, 6), goldMat);
+                    leafTip.position.y = branchSpan + 0.1;
+                    branchPivot.add(leafTip);
+
+                    batangGaringGroup.add(branchPivot);
+                }
+            }
+
+            const tingangBody = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.38, 12), darkWoodMat);
+            tingangBody.rotation.z = Math.PI / 2;
+            tingangBody.position.set(0, 3.52, 0);
+            tingangBody.castShadow = true;
+            batangGaringGroup.add(tingangBody);
+
+            const tingangHead = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 12), crimsonMat);
+            tingangHead.position.set(0.24, 3.64, 0);
+            batangGaringGroup.add(tingangHead);
+
+            const tingangBeak = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.32, 8), goldMat);
+            tingangBeak.rotation.z = -Math.PI / 2;
+            tingangBeak.position.set(0.46, 3.62, 0);
+            batangGaringGroup.add(tingangBeak);
+
+            const tingangTail = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.45, 8), new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.4 }));
+            tingangTail.rotation.z = Math.PI / 2.4;
+            tingangTail.position.set(-0.34, 3.45, 0);
+            batangGaringGroup.add(tingangTail);
+
+            [-1.15, 1.15].forEach((px, pIdx) => {
+                const pantarH = 2.25;
+                const pantarPost = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, pantarH, 10), ulinMat);
+                pantarPost.position.set(px, pantarH / 2, 0.25);
+                pantarPost.castShadow = true;
+                batangGaringGroup.add(pantarPost);
+
+                const pantarCapH = 0.3;
+                const pantarCap = new THREE.Mesh(new THREE.ConeGeometry(0.14, pantarCapH, 4), pIdx === 0 ? goldMat : crimsonMat);
+                pantarCap.position.set(px, pantarH + pantarCapH / 2, 0.25);
+                batangGaringGroup.add(pantarCap);
+            });
+
+            humaGroup.add(batangGaringGroup);
+
+            // Karakter Utama
+            characters.teacher = createCharacter({
+                x: -1.15, y: floorY, z: 4.35, rotY: 0, roleType: 'teacher', seated: false
+            });
+            characters.raka = createCharacter({
+                x: -0.36, y: 0, z: 9.75, rotY: Math.PI, roleType: 'student-male', seated: false
+            });
+            characters.sinta = createCharacter({
+                x: 0.36, y: 0, z: 10.05, rotY: Math.PI, roleType: 'student-female', seated: false
+            });
+            faceToward(characters.teacher, 0.15, 5.05);
+
+            // Pepohonan sekitar
+            const treePositions = [
+                [-10.5, -6.5], [-12.0, 3.5], [-9.5, 11.5],
+                [10.5, -5.5], [11.8, 4.5], [10.2, 11.2]
+            ];
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x382012, roughness: 0.9 });
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x1e4d24, roughness: 0.8 });
+
+            treePositions.forEach(([tx, tz], i) => {
+                const tree = new THREE.Group();
+                const h = 3.2 + (i % 3) * 0.7;
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.36, h, 8), trunkMat);
+                trunk.position.y = h / 2;
+                trunk.castShadow = true;
+                tree.add(trunk);
+
+                const c1 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.65, 1), leafMat);
+                c1.position.y = h + 0.6;
+                c1.castShadow = true;
+                tree.add(c1);
+
+                tree.position.set(tx, 0, tz);
+                scene.add(tree);
+            });
+        }
+
+        function setCharacterPose(ch, seated, baseY) {
+            if (!ch || !ch.userData) return;
+            ch.userData.seated = seated;
+            ch.position.y = seated ? (baseY - 0.52) : baseY;
+            ch.userData.leftLeg.rotation.x = seated ? -1.52 : 0;
+            ch.userData.rightLeg.rotation.x = seated ? -1.52 : 0;
+        }
+
+        function applySceneAction(action, focusCharKey) {
+            Object.values(characters).forEach(ch => {
+                if (ch && ch.userData) {
+                    ch.userData.isWalking = false;
+                    if (ch.userData.headGroup) ch.userData.headGroup.rotation.y = 0;
+                }
+            });
+            walkSequence = null;
+
+            const teacher = characters.teacher;
+            const raka = characters.raka;
+            const sinta = characters.sinta;
+            if (!teacher || !raka || !sinta) return;
+
+            const floorY = 2.22;
+            const stepCount = 7;
+            const stepRise = floorY / stepCount;
+            const stepStartZ = 6.32;
+            const stepEndZ = 9.12;
+
+            const stairWaypoint = (x, s) => {
+                const topY = stepRise * (s + 1);
+                const t = s / (stepCount - 1);
+                const sz = stepEndZ - (stepEndZ - stepStartZ) * t;
+                return new THREE.Vector3(x, topY, sz);
+            };
+
+            if (action === 'ch1_climb_stairs') {
+                setCharacterPose(teacher, false, floorY);
+                setCharacterPose(raka, false, 0);
+                setCharacterPose(sinta, false, 0);
+
+                // Guru BK berdiri di kiri depan pintu Teras Pante, menghadap ke Raka & Sinta
+                teacher.position.set(-1.15, floorY, 4.35);
+                faceToward(teacher, 0.15, 5.05);
+
+                raka.position.set(-0.34, 0, 9.75);
+                sinta.position.set(0.34, 0, 10.15);
+                raka.userData.isWalking = true;
+                sinta.userData.isWalking = true;
+
+                const rakaFinal = new THREE.Vector3(-0.05, floorY, 5.35);
+                const sintaFinal = new THREE.Vector3(0.75, floorY, 4.75);
+
+                walkSequence = {
+                    actors: [
+                        {
+                            mesh: raka,
+                            waypoints: [
+                                stairWaypoint(-0.34, 0),
+                                stairWaypoint(-0.34, 1),
+                                stairWaypoint(-0.34, 2),
+                                stairWaypoint(-0.34, 3),
+                                stairWaypoint(-0.34, 4),
+                                stairWaypoint(-0.34, 5),
+                                stairWaypoint(-0.34, 6),
+                                new THREE.Vector3(-0.34, floorY, 5.75),
+                                rakaFinal
+                            ],
+                            wpIndex: 0,
+                            endRotY: Math.atan2(teacher.position.x - rakaFinal.x, teacher.position.z - rakaFinal.z)
+                        },
+                        {
+                            mesh: sinta,
+                            waypoints: [
+                                new THREE.Vector3(0.34, 0, 9.75),
+                                stairWaypoint(0.34, 0),
+                                stairWaypoint(0.34, 1),
+                                stairWaypoint(0.34, 2),
+                                stairWaypoint(0.34, 3),
+                                stairWaypoint(0.34, 4),
+                                stairWaypoint(0.34, 5),
+                                stairWaypoint(0.34, 6),
+                                new THREE.Vector3(0.34, floorY, 5.75),
+                                sintaFinal
+                            ],
+                            wpIndex: 0,
+                            endRotY: Math.atan2(teacher.position.x - sintaFinal.x, teacher.position.z - sintaFinal.z)
+                        }
+                    ],
+                    speed: 1.65
+                };
+            } else if (action === 'ch1_at_pante') {
+                setCharacterPose(teacher, false, floorY);
+                setCharacterPose(raka, false, floorY);
+                setCharacterPose(sinta, false, floorY);
+
+                // Formasi segitiga percakapan di depan pintu Teras Pante sehingga ketiganya bertatap muka
+                teacher.position.set(-1.15, floorY, 4.35);
+                raka.position.set(-0.05, floorY, 5.35);
+                sinta.position.set(0.75, floorY, 4.75);
+
+                if (focusCharKey === 'sinta') {
+                    faceToward(teacher, sinta.position.x, sinta.position.z);
+                    faceToward(raka, sinta.position.x, sinta.position.z);
+                    faceToward(sinta, teacher.position.x, teacher.position.z);
+                } else if (focusCharKey === 'raka') {
+                    faceToward(teacher, raka.position.x, raka.position.z);
+                    faceToward(sinta, raka.position.x, raka.position.z);
+                    faceToward(raka, (teacher.position.x + sinta.position.x) * 0.5, (teacher.position.z + sinta.position.z) * 0.5);
+                } else {
+                    faceToward(teacher, 0.35, 5.05);
+                    faceToward(raka, teacher.position.x, teacher.position.z);
+                    faceToward(sinta, teacher.position.x, teacher.position.z);
+                }
+            } else if (action === 'ch1_enter_los') {
+                setCharacterPose(teacher, false, floorY);
+                setCharacterPose(raka, false, floorY);
+                setCharacterPose(sinta, false, floorY);
+                teacher.userData.isWalking = true;
+                raka.userData.isWalking = true;
+                sinta.userData.isWalking = true;
+
+                // Rute melewati tengah celah pintu terbuka lebar (x = 0, z = 4.6 -> z = 3.5 -> z = 2.3) lalu menuju tikar Ruang Los
+                walkSequence = {
+                    actors: [
+                        {
+                            mesh: teacher,
+                            waypoints: [
+                                new THREE.Vector3(-0.35, floorY, 4.35),
+                                new THREE.Vector3(0.0, floorY, 3.55),
+                                new THREE.Vector3(-0.35, floorY, 2.3),
+                                new THREE.Vector3(-3.8, floorY - 0.52, -0.35)
+                            ],
+                            wpIndex: 0,
+                            endRotY: 0,
+                            endSeated: true
+                        },
+                        {
+                            mesh: raka,
+                            waypoints: [
+                                new THREE.Vector3(-0.05, floorY, 4.9),
+                                new THREE.Vector3(0.0, floorY, 3.55),
+                                new THREE.Vector3(0.0, floorY, 2.2),
+                                new THREE.Vector3(-4.65, floorY - 0.52, 0.35)
+                            ],
+                            wpIndex: 0,
+                            endRotY: 1.15,
+                            endSeated: true
+                        },
+                        {
+                            mesh: sinta,
+                            waypoints: [
+                                new THREE.Vector3(0.45, floorY, 4.75),
+                                new THREE.Vector3(0.0, floorY, 3.55),
+                                new THREE.Vector3(0.25, floorY, 2.1),
+                                new THREE.Vector3(-2.95, floorY - 0.52, 0.35)
+                            ],
+                            wpIndex: 0,
+                            endRotY: -1.15,
+                            endSeated: true
+                        }
+                    ],
+                    speed: 1.95
+                };
+            } else if (action === 'ch2_sit_los') {
+                setCharacterPose(teacher, true, floorY + 0.12);
+                setCharacterPose(raka, true, floorY + 0.12);
+                setCharacterPose(sinta, true, floorY + 0.12);
+                teacher.position.set(-3.8, floorY - 0.4, -0.35);
+                raka.position.set(-4.65, floorY - 0.4, 0.35);
+                sinta.position.set(-2.95, floorY - 0.4, 0.35);
+                faceToward(teacher, -3.8, 0.35);
+                faceToward(raka, -3.55, 0.05);
+                faceToward(sinta, -4.05, 0.05);
+            } else if (action === 'ch3_walk_pillar') {
+                setCharacterPose(teacher, false, floorY);
+                setCharacterPose(raka, false, floorY);
+                setCharacterPose(sinta, false, floorY);
+                teacher.position.set(-3.8, floorY, -0.35);
+                raka.position.set(-4.65, floorY, 0.35);
+                sinta.position.set(-2.95, floorY, 0.35);
+                teacher.userData.isWalking = true;
+                raka.userData.isWalking = true;
+                sinta.userData.isWalking = true;
+
+                walkSequence = {
+                    actors: [
+                        {
+                            mesh: teacher,
+                            waypoints: [new THREE.Vector3(-0.65, floorY, -0.95)],
+                            wpIndex: 0,
+                            endRotY: 0.45
+                        },
+                        {
+                            mesh: raka,
+                            waypoints: [new THREE.Vector3(-1.25, floorY, 0.45)],
+                            wpIndex: 0,
+                            endRotY: 2.2
+                        },
+                        {
+                            mesh: sinta,
+                            waypoints: [new THREE.Vector3(1.25, floorY, 0.45)],
+                            wpIndex: 0,
+                            endRotY: -2.2
+                        }
+                    ],
+                    speed: 1.9
+                };
+            } else if (action === 'ch3_at_pillar') {
+                setCharacterPose(teacher, false, floorY);
+                setCharacterPose(raka, false, floorY);
+                setCharacterPose(sinta, false, floorY);
+                teacher.position.set(-0.65, floorY, -0.95);
+                raka.position.set(-1.25, floorY, 0.45);
+                sinta.position.set(1.25, floorY, 0.45);
+                faceToward(teacher, 0, 0.45);
+                faceToward(raka, -0.2, -0.35);
+                faceToward(sinta, -0.85, -0.25);
+            } else if (action === 'ch4_private_bilik') {
+                // Guru BK dan Raka berada DI DALAM Bilik Privat (x: 3.3..5.9, z: -0.8..1.4) saling berhadapan
+                roofOpen = true;
+                const roofTextEl = document.getElementById('hud-text-roof');
+                if (roofTextEl) roofTextEl.textContent = 'Tutup Atap';
+
+                setCharacterPose(teacher, false, floorY);
+                setCharacterPose(raka, false, floorY);
+                setCharacterPose(sinta, false, floorY);
+
+                teacher.position.set(4.15, floorY, 0.05);
+                raka.position.set(5.15, floorY, 0.55);
+                faceToward(teacher, raka.position.x, raka.position.z);
+                faceToward(raka, teacher.position.x, teacher.position.z);
+
+                // Sinta menunggu di luar bilik dekat Ruang Los
+                sinta.position.set(1.65, floorY, 1.35);
+                faceToward(sinta, -0.5, 0.5);
+            } else if (action === 'ch4_handep_circle') {
+                // Kesepakatan Handep di dalam area Bilik Privat / ambang bilik
+                setCharacterPose(teacher, false, floorY);
+                setCharacterPose(raka, false, floorY);
+                setCharacterPose(sinta, false, floorY);
+
+                teacher.position.set(4.15, floorY, -0.05);
+                raka.position.set(5.15, floorY, 0.55);
+                sinta.position.set(4.25, floorY, 0.85);
+
+                faceToward(teacher, 4.7, 0.7);
+                faceToward(raka, teacher.position.x, teacher.position.z);
+                faceToward(sinta, 4.65, 0.25);
+            } else if (action === 'ch5_walk_monument' || action === 'ch5_at_monument') {
+                setCharacterPose(teacher, false, 0);
+                setCharacterPose(raka, false, 0);
+                setCharacterPose(sinta, false, 0);
+                teacher.position.set(3.85, 0, 8.65);
+                raka.position.set(4.35, 0, 9.55);
+                sinta.position.set(5.15, 0, 9.85);
+                faceToward(teacher, 4.75, 9.7);
+                faceToward(raka, teacher.position.x, teacher.position.z);
+                faceToward(sinta, teacher.position.x, teacher.position.z);
+            }
+        }
+
+        function create3DWorldPins() {
+            const container = document.getElementById('world-pins-container');
+            if (!container) return;
+            container.innerHTML = '';
+            locationPins = [];
+
+            CHAPTERS_DATA.forEach((chap, idx) => {
+                const pinEl = document.createElement('div');
+                pinEl.className = 'quest-pin pointer-events-auto';
+                pinEl.innerHTML = `
+                    <div class="animate-bob flex flex-col items-center">
+                        <div class="px-2.5 py-1 bg-[#140c07]/95 border border-[#f3c46b] text-[10px] font-bold uppercase tracking-wider text-[#fbf6ec] whitespace-nowrap shadow-lg">
+                            ${idx + 1}. ${chap.shortTitle}
+                        </div>
+                        <div class="w-7 h-7 mt-1 bg-[#9e2a22] border-2 border-[#f3c46b] rounded-full flex items-center justify-center text-[#f3c46b] text-xs font-extrabold shadow-xl">
+                            ${idx + 1}
+                        </div>
+                        <div class="w-[2px] h-4 bg-[#f3c46b]"></div>
+                    </div>
+                `;
+                pinEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    playUiClick();
+                    if (currentScreen === 'gameplay' && activeChapterIdx === null) {
+                        inspectLocation(idx);
+                    }
+                });
+                container.appendChild(pinEl);
+                locationPins.push({ el: pinEl, pos3D: chap.worldPin.clone() });
+            });
+        }
+
+        function update3DWorldPins() {
+            const container = document.getElementById('world-pins-container');
+            if (!container) return;
+            const shouldShow = (currentScreen === 'gameplay') && (activeChapterIdx === null) && showPins;
+            container.classList.toggle('hidden', !shouldShow);
+            if (!shouldShow || !camera) return;
+
+            const widthHalf = window.innerWidth / 2;
+            const heightHalf = window.innerHeight / 2;
+
+            locationPins.forEach(({ el, pos3D }) => {
+                const projected = pos3D.clone().project(camera);
+                const isBehind = projected.z > 1;
+                const x = (projected.x * widthHalf) + widthHalf;
+                const y = -(projected.y * heightHalf) + heightHalf;
+
+                if (isBehind || x < -60 || x > window.innerWidth + 60 || y < 55 || y > window.innerHeight + 60) {
+                    el.style.opacity = '0';
+                    el.style.pointerEvents = 'none';
+                } else {
+                    el.style.opacity = '1';
+                    el.style.pointerEvents = 'auto';
+                    el.style.left = `${x}px`;
+                    el.style.top = `${y}px`;
+                }
+            });
+        }
+
+        function updateCharacterAnimations(dt, elapsed) {
+            if (walkSequence && Array.isArray(walkSequence.actors)) {
+                let anyMoving = false;
+                walkSequence.actors.forEach(actor => {
+                    const mesh = actor.mesh;
+                    const wp = actor.waypoints[actor.wpIndex];
+                    if (!mesh || !wp) return;
+                    const dx = wp.x - mesh.position.x;
+                    const dy = wp.y - mesh.position.y;
+                    const dz = wp.z - mesh.position.z;
+                    const dist = Math.hypot(dx, dy, dz);
+                    if (dist > 0.08) {
+                        anyMoving = true;
+                        const step = Math.min(dist, walkSequence.speed * dt);
+                        mesh.position.x += (dx / dist) * step;
+                        mesh.position.y += (dy / dist) * step;
+                        mesh.position.z += (dz / dist) * step;
+                        mesh.rotation.y = Math.atan2(dx, dz);
+                        if (mesh.userData) mesh.userData.isWalking = true;
+                    } else {
+                        mesh.position.copy(wp);
+                        if (actor.wpIndex < actor.waypoints.length - 1) {
+                            actor.wpIndex++;
+                            anyMoving = true;
+                        } else {
+                            if (typeof actor.endRotY === 'number') mesh.rotation.y = actor.endRotY;
+                            if (mesh.userData) mesh.userData.isWalking = false;
+                        }
+                    }
+                });
+                if (!anyMoving) walkSequence = null;
+            }
+
+            Object.values(characters).forEach(ch => {
+                if (!ch || !ch.userData) return;
+                const { leftLeg, rightLeg, leftArm, rightArm, headGroup, seated, isWalking, phase } = ch.userData;
+                const t = elapsed * 6.5 + phase;
+
+                if (isWalking && !seated) {
+                    const swing = Math.sin(t * 1.45) * 0.52;
+                    leftLeg.rotation.x = swing;
+                    rightLeg.rotation.x = -swing;
+                    leftArm.rotation.x = -swing * 0.7;
+                    rightArm.rotation.x = swing * 0.7;
+                    headGroup.rotation.y = Math.sin(t * 0.7) * 0.05;
+                } else if (seated) {
+                    leftLeg.rotation.x = -1.45;
+                    rightLeg.rotation.x = -1.45;
+                    leftArm.rotation.x = -0.35 + Math.sin(elapsed * 2.0 + phase) * 0.05;
+                    rightArm.rotation.x = -0.35 - Math.sin(elapsed * 2.0 + phase) * 0.05;
+                    headGroup.rotation.y = Math.sin(elapsed * 1.3 + phase) * 0.08;
+                } else {
+                    leftLeg.rotation.x = 0;
+                    rightLeg.rotation.x = 0;
+                    leftArm.rotation.x = Math.sin(elapsed * 1.7 + phase) * 0.04;
+                    rightArm.rotation.x = -Math.sin(elapsed * 1.7 + phase) * 0.04;
+                    headGroup.rotation.y = Math.sin(elapsed * 1.2 + phase) * 0.06;
+                }
+            });
+        }
+
+        let lastFrameTime = performance.now();
+        let elapsedClock = 0;
+
+        function initThree() {
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x13222c);
+            scene.fog = new THREE.FogExp2(0x13222c, 0.015);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 160);
+            camera.position.set(14.5, 9.8, 17.5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.08;
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.06;
+            controls.maxPolarAngle = Math.PI / 2 - 0.04;
+            controls.minDistance = 4.5;
+            controls.maxDistance = 38;
+            controls.target.set(0, 2.4, 0);
+
+            controls.addEventListener('start', () => {
+                isDraggingCamera = true;
+                targetCamPos = null;
+                targetCamTarget = null;
+            });
+            controls.addEventListener('end', () => {
+                isDraggingCamera = false;
+            });
+
+            hemiLight = new THREE.HemisphereLight(0x9ec5e8, 0x3b2616, 0.85);
+            scene.add(hemiLight);
+
+            sunLight = new THREE.DirectionalLight(0xfff0d4, 1.55);
+            sunLight.position.set(16, 24, 14);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.near = 2;
+            sunLight.shadow.camera.far = 75;
+            const d = 22;
+            sunLight.shadow.camera.left = -d;
+            sunLight.shadow.camera.right = d;
+            sunLight.shadow.camera.top = d;
+            sunLight.shadow.camera.bottom = -d;
+            sunLight.shadow.bias = -0.0005;
+            scene.add(sunLight);
+
+            const rimLight = new THREE.DirectionalLight(0xd99b26, 0.45);
+            rimLight.position.set(-14, 10, -12);
+            scene.add(rimLight);
+
+            buildEnvironmentAndHumaBetang();
+            create3DWorldPins();
+
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const now = performance.now();
+            const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+            lastFrameTime = now;
+            elapsedClock += dt;
+
+            if (roofGroup) {
+                const targetRoofY = roofOpen ? 2.4 : 0;
+                roofGroup.position.y += (targetRoofY - roofGroup.position.y) * 0.08;
+            }
+
+            if (!isDraggingCamera && targetCamPos && targetCamTarget && camera && controls) {
+                camera.position.lerp(targetCamPos, 0.06);
+                controls.target.lerp(targetCamTarget, 0.06);
+                if (camera.position.distanceTo(targetCamPos) < 0.05 && controls.target.distanceTo(targetCamTarget) < 0.05) {
+                    targetCamPos = null;
+                    targetCamTarget = null;
+                }
+            }
+
+            updateCharacterAnimations(dt, elapsedClock);
+            if (controls) controls.update();
+            if (renderer && scene && camera) renderer.render(scene, camera);
+            update3DWorldPins();
+        }
+
+        function onWindowResize() {
+            if (!camera || !renderer) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // =====================================================================
+        // 4. SCREEN NAVIGATION, MAP & VISUAL NOVEL ENGINE
+        // =====================================================================
+        function setScreen(screenName) {
+            currentScreen = screenName;
+            const layers = {
+                'main-menu': document.getElementById('screen-main-menu'),
+                'map-select': document.getElementById('screen-map-select'),
+                'gameplay': document.getElementById('screen-gameplay')
+            };
+            Object.entries(layers).forEach(([key, el]) => {
+                if (!el) return;
+                if (key === screenName) {
+                    el.classList.remove('screen-hidden');
+                    setTimeout(() => { el.style.opacity = '1'; }, 10);
+                } else {
+                    el.style.opacity = '0';
+                    el.classList.add('screen-hidden');
+                }
+            });
+            update3DWorldPins();
+        }
+
+        function returnToMainMenu() {
+            closeDialogue();
+            closeExploreLore();
+            activeChapterIdx = null;
+            setScreen('main-menu');
+            resetCamera();
+        }
+
+        function resetCamera() {
+            targetCamPos = new THREE.Vector3(14.5, 9.8, 17.5);
+            targetCamTarget = new THREE.Vector3(0, 2.4, 0);
+        }
+
+        function toggleRoof() {
+            roofOpen = !roofOpen;
+            const textEl = document.getElementById('hud-text-roof');
+            if (textEl) textEl.textContent = roofOpen ? 'Tutup Atap' : 'Buka Atap';
+        }
+
+        function toggleDayNight() {
+            playUiClick();
+            isSunset = !isSunset;
+            const btn = document.getElementById('set-btn-time');
+            if (scene && sunLight && hemiLight) {
+                if (isSunset) {
+                    scene.background = new THREE.Color(0x2b1518);
+                    scene.fog = new THREE.FogExp2(0x2b1518, 0.015);
+                    sunLight.color.setHex(0xff9e5e);
+                    sunLight.intensity = 1.35;
+                    sunLight.position.set(-16, 9, 12);
+                    hemiLight.color.setHex(0xf4a261);
+                    hemiLight.groundColor.setHex(0x2b140b);
+                    if (btn) btn.textContent = 'Senja Hangat';
+                } else {
+                    scene.background = new THREE.Color(0x13222c);
+                    scene.fog = new THREE.FogExp2(0x13222c, 0.015);
+                    sunLight.color.setHex(0xfff0d4);
+                    sunLight.intensity = 1.55;
+                    sunLight.position.set(16, 24, 14);
+                    hemiLight.color.setHex(0x9ec5e8);
+                    hemiLight.groundColor.setHex(0x3b2616);
+                    if (btn) btn.textContent = 'Pagi Cerah';
+                }
+            }
+        }
+
+        function togglePins() {
+            playUiClick();
+            showPins = !showPins;
+            const btn = document.getElementById('set-btn-pins');
+            if (btn) {
+                btn.textContent = showPins ? 'TAMPIL' : 'SEMBUNYI';
+                btn.className = showPins
+                    ? 'game-btn-primary px-3.5 py-1.5 text-xs cursor-pointer'
+                    : 'game-btn px-3.5 py-1.5 text-xs font-bold cursor-pointer';
+            }
+            update3DWorldPins();
+        }
+
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('hidden');
+                el.classList.add('flex');
+            }
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('hidden');
+                el.classList.remove('flex');
+            }
+        }
+
+        function openMapSelect() {
+            closeDialogue();
+            closeExploreLore();
+            renderMapNodesAndBriefing();
+            setScreen('map-select');
+            targetCamPos = new THREE.Vector3(0, 19.5, 16.5);
+            targetCamTarget = new THREE.Vector3(0, 1.5, 0.5);
+        }
+
+        function renderMapNodesAndBriefing() {
+            const doneCount = completedChapters.filter(Boolean).length;
+            const progEl = document.getElementById('map-progress-text');
+            if (progEl) progEl.textContent = `${doneCount} / ${CHAPTERS_DATA.length} Wilayah`;
+
+            const nodesLayer = document.getElementById('overworld-nodes-layer');
+            if (nodesLayer) {
+                nodesLayer.innerHTML = CHAPTERS_DATA.map((ch, idx) => {
+                    const isSelected = idx === selectedMapChapterIdx;
+                    const isDone = completedChapters[idx];
+                    const activeClass = isSelected ? 'map-node-active scale-110' : 'opacity-90 hover:opacity-100';
+                    const badgeColor = isDone ? 'bg-emerald-700 border-emerald-300 text-white' : 'bg-[#8f241e] border-[#f5b942] text-[#f5b942]';
+                    return `
+                        <button onclick="playUiClick(); selectMapChapter(${idx})"
+                                style="left: ${ch.mapPos.left}; top: ${ch.mapPos.top};"
+                                class="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer transition-transform ${activeClass}">
+                            <div class="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full border-2 flex items-center justify-center font-display font-extrabold text-sm shadow-xl ${badgeColor}">
+                                ${isDone ? '<i class="fa-solid fa-check"></i>' : (idx + 1)}
+                            </div>
+                            <span class="mt-1.5 px-2 py-0.5 bg-[#120a06]/90 border border-[#6e4422] text-[10px] font-bold text-[#fffbeb] whitespace-nowrap">
+                                ${ch.shortTitle}
+                            </span>
+                        </button>
+                    `;
+                }).join('');
+            }
+
+            const ch = CHAPTERS_DATA[selectedMapChapterIdx] || CHAPTERS_DATA[0];
+            const card = document.getElementById('map-briefing-card');
+            if (card) {
+                card.innerHTML = `
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-[0.25em] text-[#f5b942] block">${ch.badge}</span>
+                        <h3 class="font-display text-xl sm:text-2xl font-bold text-[#fffbeb] mt-1">${ch.location}</h3>
+                        <p class="text-xs text-[#d99b26] font-semibold mt-0.5">${ch.subtitle}</p>
+                        <div class="mt-4 p-3.5 bg-[#120a06] border-l-2 border-[#d99b26] text-xs sm:text-sm text-[#e6d5b8] leading-relaxed">
+                            ${ch.loreDesc}
+                        </div>
+                        <div class="mt-3 p-3.5 bg-[#120a06] border-l-2 border-emerald-500 text-xs text-[#cbb89d] leading-relaxed">
+                            <strong class="text-emerald-400 uppercase tracking-wider block text-[10px] mb-1">Fokus Praktik Konseling BK:</strong>
+                            ${ch.loreCounseling}
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-[#5c3a1d] flex items-center justify-between gap-3">
+                        <span class="text-xs text-[#a8947a]">
+                            Status: <strong class="${completedChapters[ch.id] ? 'text-emerald-400' : 'text-[#f5b942]'}">${completedChapters[ch.id] ? 'Selesai Dipelajari' : 'Siap Dimainkan'}</strong>
+                        </span>
+                        <button onclick="playUiClick(); startChapter(${ch.id})" class="game-btn-primary px-5 py-2.5 text-xs sm:text-sm uppercase tracking-wider cursor-pointer">
+                            Mulai Babak <i class="fa-solid fa-play ml-1.5"></i>
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function selectMapChapter(idx) {
+            selectedMapChapterIdx = idx;
+            renderMapNodesAndBriefing();
+        }
+
+        function startFreeExplore() {
+            activeChapterIdx = null;
+            setScreen('gameplay');
+            closeDialogue();
+            syncGameplayHUDMode(false);
+            document.getElementById('hud-stage-label').textContent = 'Mode Jelajah Bebas';
+            document.getElementById('hud-location-title').textContent = '5 Bagian Huma Betang';
+            document.getElementById('free-explore-bar')?.classList.remove('hidden');
+            closeExploreLore();
+            resetCamera();
+        }
+
+        function inspectLocation(idx) {
+            if (activeChapterIdx !== null) return;
+            const ch = CHAPTERS_DATA[idx] || CHAPTERS_DATA[0];
+            activeExploreIdx = idx;
+            setScreen('gameplay');
+            syncGameplayHUDMode(false);
+            document.getElementById('hud-stage-label').textContent = 'Mode Jelajah Bebas';
+            document.getElementById('hud-location-title').textContent = ch.location;
+
+            targetCamPos = ch.camPos.clone();
+            targetCamTarget = ch.camTarget.clone();
+
+            const card = document.getElementById('free-explore-lore-card');
+            if (card) {
+                card.classList.remove('hidden');
+                document.getElementById('lore-badge').textContent = ch.badge;
+                document.getElementById('lore-title').textContent = ch.location;
+                document.getElementById('lore-desc').textContent = ch.loreDesc;
+                document.getElementById('lore-counseling').textContent = ch.loreCounseling;
+            }
+        }
+
+        function syncGameplayHUDMode(isStoryMode) {
+            const navBtn = document.getElementById('hud-btn-nav');
+            const navIcon = document.getElementById('hud-icon-nav');
+            const navText = document.getElementById('hud-text-nav');
+            const harmonyBox = document.getElementById('hud-harmony-box');
+
+            if (harmonyBox) {
+                harmonyBox.classList.toggle('hidden', !isStoryMode);
+            }
+
+            if (navBtn && navIcon && navText) {
+                if (isStoryMode) {
+                    navIcon.className = 'fa-solid fa-map text-[#f5b942]';
+                    navText.textContent = 'Peta';
+                    navBtn.onclick = () => {
+                        playUiClick();
+                        openMapSelect();
+                    };
+                } else {
+                    navIcon.className = 'fa-solid fa-arrow-left text-[#f5b942]';
+                    navText.textContent = 'Menu Utama';
+                    navBtn.onclick = () => {
+                        playUiClick();
+                        returnToMainMenu();
+                    };
+                }
+            }
+        }
+
+        function closeExploreLore() {
+            document.getElementById('free-explore-lore-card')?.classList.add('hidden');
+        }
+
+        function speakExploreLore() {
+            const ch = CHAPTERS_DATA[activeExploreIdx] || CHAPTERS_DATA[0];
+            speakText(`${ch.location}. ${ch.loreDesc}`);
+        }
+
+        function startChapter(chapterIdx) {
+            activeChapterIdx = chapterIdx;
+            activeStepIdx = 0;
+            selectedMapChapterIdx = chapterIdx;
+            closeExploreLore();
+            document.getElementById('free-explore-bar')?.classList.add('hidden');
+            setScreen('gameplay');
+            syncGameplayHUDMode(true);
+
+            const ch = CHAPTERS_DATA[chapterIdx];
+            document.getElementById('hud-stage-label').textContent = ch.badge;
+            document.getElementById('hud-location-title').textContent = ch.location;
+            targetCamPos = ch.camPos.clone();
+            targetCamTarget = ch.camTarget.clone();
+
+            const dlgBox = document.getElementById('dialogue-container');
+            if (dlgBox) {
+                dlgBox.classList.remove('hidden');
+                setTimeout(() => {
+                    dlgBox.classList.remove('translate-y-6', 'opacity-0');
+                }, 20);
+            }
+            renderDialogueStep();
+        }
+
+        function renderDialogueStep() {
+            if (activeChapterIdx === null) return;
+            const ch = CHAPTERS_DATA[activeChapterIdx];
+            const step = ch.steps[activeStepIdx];
+            if (!step) return;
+
+            applySceneAction(step.sceneAction, step.focusChar);
+
+            document.getElementById('dlg-speaker-badge').textContent = step.speaker;
+            document.getElementById('dlg-stage-chip').textContent = step.stageChip || ch.badge;
+            document.getElementById('dlg-step-counter').textContent = `${activeStepIdx + 1} / ${ch.steps.length}`;
+            document.getElementById('dlg-portrait-icon').className = `fa-solid ${step.icon || 'fa-user'} text-xl sm:text-3xl text-[#f5b942]`;
+            document.getElementById('dlg-portrait-role').textContent = step.role || 'Tokoh';
+            document.getElementById('dlg-technique').textContent = step.technique || 'Konseling Budaya Huma Betang';
+
+            const choicesArea = document.getElementById('dlg-choices-area');
+            const navArea = document.getElementById('dlg-nav-area');
+            const prevBtn = document.getElementById('btn-dlg-prev');
+            if (prevBtn) prevBtn.disabled = activeStepIdx === 0;
+
+            fullDialogueText = step.text;
+            startTypewriter(step.text);
+            speakText(`${step.speaker} berkata: ${step.text}`);
+
+            if (Array.isArray(step.choices) && step.choices.length > 0) {
+                choicesArea.classList.remove('hidden');
+                navArea.classList.add('hidden');
+                choicesArea.innerHTML = step.choices.map((c, cIdx) => `
+                    <button onclick="playUiClick(); handleDialogueChoice(${cIdx})" class="vn-choice-btn w-full text-left px-4 py-2.5 text-xs sm:text-sm cursor-pointer">
+                        ${c.label}
+                    </button>
+                `).join('');
+            } else {
+                choicesArea.classList.add('hidden');
+                navArea.classList.remove('hidden');
+                const nextBtn = document.getElementById('btn-dlg-next');
+                if (nextBtn) {
+                    const isLast = activeStepIdx >= ch.steps.length - 1;
+                    nextBtn.innerHTML = isLast
+                        ? '<span>Selesaikan Babak</span> <i class="fa-solid fa-check text-xs"></i>'
+                        : '<span>Lanjutkan</span> <i class="fa-solid fa-chevron-right text-xs"></i>';
+                    nextBtn.onclick = () => {
+                        playUiClick();
+                        nextDialogueStep();
+                    };
+                }
+            }
+        }
+
+        function handleDialogueChoice(choiceIdx) {
+            if (activeChapterIdx === null) return;
+            const ch = CHAPTERS_DATA[activeChapterIdx];
+            const step = ch.steps[activeStepIdx];
+            const choice = step?.choices?.[choiceIdx];
+            if (!choice) return;
+
+            harmonyScore = Math.max(0, Math.min(100, harmonyScore + (choice.delta || 0)));
+            updateHarmonyHUD();
+
+            document.getElementById('dlg-speaker-badge').textContent = "Guru BK (Sang Pamomong)";
+            document.getElementById('dlg-portrait-icon').className = "fa-solid fa-user-tie text-xl sm:text-3xl text-[#f5b942]";
+            document.getElementById('dlg-portrait-role').textContent = "Pamomong";
+
+            document.getElementById('dlg-choices-area')?.classList.add('hidden');
+            const navArea = document.getElementById('dlg-nav-area');
+            if (navArea) {
+                navArea.classList.remove('hidden');
+                const nextBtn = document.getElementById('btn-dlg-next');
+                const isLast = activeStepIdx >= ch.steps.length - 1;
+                if (nextBtn) {
+                    nextBtn.innerHTML = isLast
+                        ? '<span>Selesaikan Babak</span> <i class="fa-solid fa-check text-xs"></i>'
+                        : '<span>Lanjutkan</span> <i class="fa-solid fa-chevron-right text-xs"></i>';
+                    nextBtn.onclick = () => {
+                        playUiClick();
+                        nextDialogueStep();
+                    };
+                }
+            }
+
+            const cleanReply = choice.reply.replace(/^Guru BK \(Sang Pamomong\):\s*'?|'?$/g, '');
+            fullDialogueText = cleanReply;
+            startTypewriter(cleanReply);
+            speakText(cleanReply);
+        }
+
+        function updateHarmonyHUD() {
+            const valEl = document.getElementById('hud-harmony-val');
+            const barEl = document.getElementById('hud-harmony-bar');
+            if (valEl) valEl.textContent = `${harmonyScore}%`;
+            if (barEl) barEl.style.width = `${harmonyScore}%`;
+        }
+
+        function startTypewriter(text) {
+            if (typewriterTimer) clearInterval(typewriterTimer);
+            const el = document.getElementById('dlg-text');
+            if (!el) return;
+            el.textContent = '';
+            let i = 0;
+            typewriterTimer = setInterval(() => {
+                el.textContent += text.charAt(i);
+                i++;
+                if (i >= text.length) {
+                    clearInterval(typewriterTimer);
+                    typewriterTimer = null;
+                }
+            }, 18);
+        }
+
+        function finishTypewriterInstantly() {
+            if (typewriterTimer) {
+                clearInterval(typewriterTimer);
+                typewriterTimer = null;
+            }
+            const el = document.getElementById('dlg-text');
+            if (el && fullDialogueText) el.textContent = fullDialogueText;
+        }
+
+        function replayNarration() {
+            if (fullDialogueText) speakText(fullDialogueText);
+        }
+
+        function prevDialogueStep() {
+            if (activeChapterIdx === null || activeStepIdx <= 0) return;
+            activeStepIdx--;
+            renderDialogueStep();
+        }
+
+        function nextDialogueStep() {
+            if (activeChapterIdx === null) return;
+            const ch = CHAPTERS_DATA[activeChapterIdx];
+            if (activeStepIdx < ch.steps.length - 1) {
+                activeStepIdx++;
+                renderDialogueStep();
+            } else {
+                completedChapters[activeChapterIdx] = true;
+                const nextIdx = activeChapterIdx + 1;
+                if (nextIdx < CHAPTERS_DATA.length) {
+                    selectedMapChapterIdx = nextIdx;
+                    startChapter(nextIdx);
+                } else {
+                    closeDialogue();
+                    openMapSelect();
+                }
+            }
+        }
+
+        function closeDialogue() {
+            if (typewriterTimer) clearInterval(typewriterTimer);
+            try { window.speechSynthesis.cancel(); } catch (e) {}
+            const dlgBox = document.getElementById('dialogue-container');
+            if (dlgBox) {
+                dlgBox.classList.add('translate-y-6', 'opacity-0');
+                setTimeout(() => dlgBox.classList.add('hidden'), 250);
+            }
+            if (currentScreen === 'gameplay') {
+                document.getElementById('free-explore-bar')?.classList.remove('hidden');
+            }
+        }
+
+        // =====================================================================
+        // 5. TANYA PAMOMONG CHATBOT (GEMINI API + OFFLINE KNOWLEDGE ENGINE)
+        // =====================================================================
+        const GEMINI_API_KEY_STORAGE = 'huma_betang_gemini_api_key';
+        let chatConversation = [];
+
+        function getStoredApiKey() {
+            try {
+                return (localStorage.getItem(GEMINI_API_KEY_STORAGE) || '').trim();
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function toggleApiKeyPanel() {
+            const panel = document.getElementById('chat-apikey-panel');
+            const input = document.getElementById('gemini-apikey-input');
+            if (panel) {
+                panel.classList.toggle('hidden');
+                if (!panel.classList.contains('hidden') && input) {
+                    input.value = getStoredApiKey();
+                    input.focus();
+                }
+            }
+        }
+
+        function saveGeminiApiKey() {
+            const input = document.getElementById('gemini-apikey-input');
+            const key = (input?.value || '').trim();
+            try {
+                if (key) {
+                    localStorage.setItem(GEMINI_API_KEY_STORAGE, key);
+                } else {
+                    localStorage.removeItem(GEMINI_API_KEY_STORAGE);
+                }
+            } catch (e) {}
+            updateChatModeBadge();
+            document.getElementById('chat-apikey-panel')?.classList.add('hidden');
+            appendChatMessage('assistant', key
+                ? 'API Key Gemini telah disimpan di browser Anda. Sekarang saya dapat menjawab pertanyaan secara generatif penuh sekaligus merujuk kearifan Huma Betang.'
+                : 'API Key dikosongkan. Saya akan menjawab menggunakan Mode Pakar Lokal Huma Betang.'
+            );
+        }
+
+        function updateChatModeBadge() {
+            const badge = document.getElementById('chat-mode-badge');
+            if (!badge) return;
+            badge.textContent = getStoredApiKey()
+                ? 'Asisten Konseling • Gemini AI Aktif'
+                : 'Asisten Konseling • Mode Pakar Lokal';
+        }
+
+        function openChatbot() {
+            updateChatModeBadge();
+            if (chatConversation.length === 0) resetChatHistory();
+            openModal('modal-chatbot');
+        }
+
+        function resetChatHistory() {
+            chatConversation = [
+                {
+                    role: 'assistant',
+                    content: 'Tabe! Saya Sang Pamomong. Silakan tanyakan bagaimana nilai <strong>Hapahari</strong>, <strong>Basarah</strong>, <strong>Batang Garing</strong>, <strong>Hapakat Kula / Handep</strong>, atau <strong>Belom Bahadat</strong> diterapkan dalam konseling lintas budaya di sekolah.'
+                }
+            ];
+            renderChatMessages();
+        }
+
+        function appendChatMessage(role, content) {
+            chatConversation.push({ role, content });
+            renderChatMessages();
+        }
+
+        function renderChatMessages() {
+            const feed = document.getElementById('chat-messages-feed');
+            if (!feed) return;
+            feed.innerHTML = chatConversation.map(msg => {
+                const isUser = msg.role === 'user';
+                return `
+                    <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
+                        <div class="max-w-[85%] px-4 py-3 text-xs sm:text-sm leading-relaxed ${
+                            isUser
+                                ? 'bg-[#8f241e] border border-[#f5b942] text-[#fffbeb]'
+                                : 'bg-[#1a100a] border-l-4 border-l-[#d99b26] border border-[#5c3a1d] text-[#e6d5b8]'
+                        }">
+                            ${msg.content.replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function generateOfflinePamomongReply(query) {
+            const q = query.toLowerCase();
+            if (q.includes('hapahari') || q.includes('bullying') || q.includes('perundungan') || q.includes('suku')) {
+                return 'Dalam tradisi Huma Betang Dayak Ngaju, <strong>Hapahari</strong> (berakar dari <em>pahari</em> = saudara) membawa semangat <em>"sama keme, sama mangat, sama susah"</em>. Ketika diterapkan di sekolah, konselor membiasakan siswa memandang teman lintas latar belakang sebagai saudara, sehingga ejekan atau perundungan antarsuku dicegah sejak akar empati.';
+            }
+            if (q.includes('gegar budaya') || q.includes('pindahan') || q.includes('tahap') || q.includes('konseling')) {
+                return 'Untuk siswa yang mengalami gegar budaya, alur konseling Huma Betang berjalan melalui 5 tahap: (1) <strong>Manarima & Mamapas</strong> di Teras Pante untuk penerimaan tanpa prasangka, (2) <strong>Basarah & Hapahari</strong> di Ruang Los untuk duduk sejajar dan saling terbuka, (3) <strong>Manimbang Batang Garing</strong> di Pilar Tengah untuk menjernihkan nilai, (4) <strong>Hapakat Kula & Handep</strong> di Bilik Privat & kelompok sebaya untuk solusi kolaboratif, dan (5) <strong>Belom Bahadat & Isen Mulang</strong> di Monumen Batang Garing untuk keteguhan sikap.';
+            }
+            if (q.includes('batang garing') || q.includes('belom bahadat') || q.includes('karakter')) {
+                return '<strong>Batang Garing</strong> melambangkan keselarasan kosmologis antara nilai luhur dan pijakan kehidupan, sedangkan <strong>Belom Bahadat</strong> bermakna hidup beradat, beretika, dan menghargai martabat sesama manusia, diperkuat semangat <strong>Isen Mulang</strong> (pantang mundur dalam kebaikan).';
+            }
+            return 'Sebagai Pamomong di Huma Betang, pendekatan konseling lintas budaya menekankan kesetaraan duduk di Ruang Los, menjaga kerahasiaan di Bilik Privat, serta membangun kerja sama saling menguatkan (<em>Handep</em>) berlandaskan <em>Belom Bahadat</em>. Ceritakan konteks kasus di kelas Anda agar kita bedah langkah pendampingannya.';
+        }
+
+        async function fetchGeminiWithBackoff(promptText, apiKey) {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${encodeURIComponent(apiKey)}`;
+            const payload = {
+                systemInstruction: {
+                    parts: [{
+                        text: "Anda adalah Sang Pamomong, konselor pendidikan multikultural berbasis kearifan lokal Huma Betang Dayak Ngaju. Jawab dalam bahasa Indonesia yang hangat, bijak, akurat secara budaya & konseling, dan ringkas."
+                    }]
+                },
+                contents: [{ role: 'user', parts: [{ text: promptText }] }]
+            };
+
+            const delays = [1000, 2000, 4000];
+            for (let attempt = 0; attempt <= delays.length; attempt++) {
+                try {
+                    const res = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const data = await res.json();
+                    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) return text;
+                    throw new Error('Empty response');
+                } catch (err) {
+                    if (attempt === delays.length) return generateOfflinePamomongReply(promptText);
+                    await new Promise(r => setTimeout(r, delays[attempt]));
+                }
+            }
+            return generateOfflinePamomongReply(promptText);
+        }
+
+        async function sendSuggestedQuestion(text) {
+            playUiClick();
+            await submitChatPrompt(text);
+        }
+
+        async function handleChatSubmit(event) {
+            event.preventDefault();
+            const input = document.getElementById('chat-user-input');
+            const text = (input?.value || '').trim();
+            if (!text) return;
+            input.value = '';
+            playUiClick();
+            await submitChatPrompt(text);
+        }
+
+        async function submitChatPrompt(text) {
+            const sendBtn = document.getElementById('chat-send-btn');
+            if (sendBtn) sendBtn.disabled = true;
+
+            appendChatMessage('user', text);
+            const apiKey = getStoredApiKey();
+            const reply = apiKey
+                ? await fetchGeminiWithBackoff(text, apiKey)
+                : generateOfflinePamomongReply(text);
+
+            appendChatMessage('assistant', reply);
+            if (sendBtn) sendBtn.disabled = false;
+        }
+
+        // =====================================================================
+        // 6. BOOTSTRAP APPLICATION ON LOAD
+        // =====================================================================
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                initThree();
+                updateHarmonyHUD();
+                setScreen('main-menu');
+            } catch (e) {
+                setScreen('main-menu');
+            } finally {
+                const loadingScreen = document.getElementById('screen-loading');
+                if (loadingScreen) {
+                    loadingScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        loadingScreen.classList.add('screen-hidden');
+                    }, 300);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
